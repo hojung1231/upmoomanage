@@ -96,6 +96,10 @@ const SEED_EVENTS = [
   { id: 'bbp-design-fix', date: '2026-12-01', endDate: '2026-12-31', title: '설계 수정', projectId: 'bbp-phase3', createdAt: 2 },
 ]
 
+const SEED_EXPENSES = [
+  { id: 'bbp-spent-design', projectId: 'bbp-phase3', type: 'spent', date: '2026-11-12', title: '설계비', amount: 7900000, createdAt: 1 },
+]
+
 async function seed(name, list) {
   if (!syncEnabled) {
     const items = readLocal(name)
@@ -113,4 +117,5 @@ async function seed(name, list) {
 export async function ensureSeed() {
   await seed('projects', SEED_PROJECTS)
   await seed('events', SEED_EVENTS)
+  await seed('expenses', SEED_EXPENSES)
 }
