@@ -1,0 +1,74 @@
+:root {
+  --bg: #f5f6f8; --card: #fff; --text: #1f2937; --muted: #6b7280;
+  --line: #e5e7eb; --accent: #2563eb; --sel: #dbeafe;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
+  color: var(--text); background: var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111318; --card: #1b1e25; --text: #e5e7eb; --muted: #9ca3af; --line: #2d313a; --accent: #60a5fa; --sel: #1e3a5f; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+.page { max-width: 960px; margin: 0 auto; padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); }
+
+.schedule-btn {
+  display: block; width: 100%; padding: 18px; border: 0; border-radius: 14px;
+  background: var(--accent); color: #fff; font-size: 1.15rem; font-weight: 700;
+}
+
+.create { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+.create input { flex: 1 1 160px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.create select { padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.create button { padding: 12px 18px; border: 0; border-radius: 10px; background: var(--text); color: var(--bg); font-weight: 600; }
+
+.projects { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.projects button {
+  width: 100%; text-align: left; padding: 16px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--card); font-size: 1.05rem;
+}
+.empty { color: var(--muted); padding: 12px 4px; list-style: none; }
+.note { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 24px; }
+
+.bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bar h1 { margin: 0; font-size: 1.3rem; }
+.back { border: 0; background: none; padding: 8px 4px; color: var(--accent); font-size: 1rem; }
+
+/* 스케줄 */
+.month-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.month-nav strong { font-size: 1.15rem; min-width: 120px; text-align: center; }
+.month-nav button { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 12px; font-size: 1.1rem; }
+.month-nav .today { margin-left: auto; font-size: .9rem; }
+
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.wk { text-align: center; font-size: .8rem; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--line); }
+.sun { color: #ef4444; } .sat { color: #3b82f6; }
+.cell {
+  min-height: 92px; padding: 4px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: none; text-align: left; display: flex; flex-direction: column; gap: 2px; overflow: hidden;
+}
+.cell:nth-child(7n) { border-right: 0; }
+.cell.blank { background: var(--bg); opacity: .5; }
+.cell.sel { background: var(--sel); }
+.num { font-size: .85rem; font-weight: 600; width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 50%; }
+.cell.today .num { background: var(--accent); color: #fff; }
+.chip { display: block; font-size: .72rem; color: #fff; border-radius: 4px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.more { font-size: .7rem; color: var(--muted); }
+
+.day { margin-top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+.day h2 { margin: 4px 0 8px; font-size: 1.05rem; }
+.day ul { list-style: none; margin: 0; padding: 0; }
+.day li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.day li.empty { border: 0; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.day .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.day .p { font-size: .8rem; color: var(--muted); }
+.del { border: 0; background: none; color: var(--muted); padding: 4px 8px; }
+
+@media (max-width: 600px) {
+  .cell { min-height: 64px; padding: 2px; }
+  .chip { font-size: .62rem; padding: 0 2px; }
+  .num { font-size: .78rem; width: 20px; height: 20px; }
+}
