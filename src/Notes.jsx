@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { useCollection, addItem, updateItem, removeItem } from './store.js'
-import { getApiKey, setApiKey } from './keys.js'
+import { useCollection, addItem, updateItem, removeItem, syncEnabled } from './store.js'
 
 const md = (k) => { const [, m, d] = k.split('-').map(Number); return `${m}/${d}` }
 const fmtTime = (t) => {
@@ -8,37 +7,14 @@ const fmtTime = (t) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-// 회의 텍스트 저장 (요약은 카드의 '요약' 버튼으로)
+// 회의 텍스트 저장 (요약은 카드의 '요약' 버튼으로 요청)
 export async function saveNote(project, text, fileName) {
   return addItem('notes', { projectId: project.id, text, title: fileName || '회의록', status: 'new' })
 }
 
-export async function runAnalysis(id, project, text) {
-  await updateItem('notes', id, { status: 'analyzing', error: '' })
-  try {
-    const { analyzeTranscript } = await import('./analyze.js')
-    const r = await analyzeTranscript(text, project.name)
-    await updateItem('notes', id, { status: 'done', ...r, ...(r.title ? { title: r.title } : {}) })
-  } catch (e) {
-    await updateItem('notes', id, { status: 'error', error: e.message })
-  }
-}
-
-function KeySettings({ onDone }) {
-  const [key, setKey] = useState(getApiKey())
-  return (
-    <section className="card">
-      <h2>Claude 연결</h2>
-      <p className="hint">요약에 쓰는 Claude API 키입니다. 이 기기에만 저장됩니다. console.anthropic.com → API Keys에서 발급.</p>
-      <div className="create">
-        <input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sk-ant-..." />
-      </div>
-      <div className="bactions">
-        <button className="primary" onClick={() => { setApiKey(key); onDone() }}>저장</button>
-      </div>
-    </section>
-  )
-}
+// 요약 요청: Claude Code(사용자 Claude 계정)가 요청된 회의록을 읽어 요약을 채워 넣는다
+const requestSummary = (id) => updateItem('notes', id, { status: 'requested', error: '' })
+const ASK_TEXT = 'Claude 앱에서 업무관리 세션에 "회의록 요약해줘"라고 보내면 요약이 채워집니다'
 
 function NoteDetail({ note, project, onBack }) {
   const [showText, setShowText] = useState(false)
@@ -78,24 +54,26 @@ function NoteDetail({ note, project, onBack }) {
         <h1>{note.title} <small className="sub">{fmtTime(note.createdAt)}</small></h1>
       </header>
 
-      {note.status === 'analyzing' && <p className="hint center">Claude가 요약하는 중입니다…</p>}
-      {note.status === 'error' && (
-        <section className="card">
-          <p className="neg">{note.error}</p>
-          <button className="btn-primary block" onClick={() => runAnalysis(note.id, project, note.text)}>다시 요약</button>
+      {note.status === 'requested' && (
+        <section className="card ask">
+          <h2>요약 요청됨</h2>
+          <p className="hint">{ASK_TEXT}</p>
+          <div className="bactions">
+            <button onClick={() => updateItem('notes', note.id, { status: note.summary ? 'done' : 'new' })}>요청 취소</button>
+          </div>
         </section>
       )}
       {note.status === 'new' && (
-        getApiKey()
-          ? <button className="btn-primary block" onClick={() => runAnalysis(note.id, project, note.text)}>✨ 요약</button>
-          : <p className="hint center">Claude API 키를 등록하면 요약할 수 있습니다 (회의록 목록 화면의 ⚙️)</p>
+        syncEnabled
+          ? <button className="btn-primary block" onClick={() => requestSummary(note.id)}>✨ 요약 요청</button>
+          : <p className="hint center">요약 요청은 PC·폰 연동 설정 후 사용할 수 있습니다</p>
       )}
 
       {note.summary && (
         <section className="card">
           <div className="card-head">
             <h2>요약</h2>
-            {note.status === 'done' && <button onClick={() => runAnalysis(note.id, project, note.text)}>다시 요약</button>}
+            {note.status === 'done' && <button onClick={() => requestSummary(note.id)}>다시 요약</button>}
           </div>
           <p className="summary-text">{note.summary}</p>
         </section>
@@ -174,7 +152,6 @@ export default function Notes({ project, onClose, openId }) {
     .filter((n) => n.projectId === project.id)
     .sort((a, b) => b.createdAt - a.createdAt)
   const [selected, setSelected] = useState(openId || null)
-  const [settings, setSettings] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const note = notes.find((n) => n.id === selected)
@@ -189,26 +166,20 @@ export default function Notes({ project, onClose, openId }) {
     setBusy(false)
   }
 
-  const summarize = (n) => {
-    if (!getApiKey()) { setSettings(true); return }
-    runAnalysis(n.id, project, n.text)
-  }
-
   return (
     <div className="page">
-      <header className="bar home-bar">
+      <header className="bar">
         <button className="back" onClick={onClose} aria-label="뒤로">‹</button>
-        <h1 className="grow">회의록 <small className="sub">{project.name}</small></h1>
-        <button className="gear" onClick={() => setSettings(!settings)} aria-label="설정">⚙️</button>
+        <h1>회의록 <small className="sub">{project.name}</small></h1>
       </header>
-
-      {settings && <KeySettings onDone={() => setSettings(false)} />}
 
       <label className="btn-primary block upload">
         {busy ? '올리는 중…' : '📄 텍스트 파일 올리기'}
         <input type="file" accept=".txt,text/plain" onChange={onFile} hidden />
       </label>
       <p className="hint center">갤럭시 음성녹음 → 텍스트 변환 → 공유 → 업무관리 로도 넣을 수 있습니다</p>
+      {!syncEnabled && <p className="hint center">요약 요청은 PC·폰 연동 설정 후 사용할 수 있습니다</p>}
+      {notes.some((n) => n.status === 'requested') && <p className="hint center">{ASK_TEXT}</p>}
 
       <ul className="projects">
         {notes.map((n) => (
@@ -217,17 +188,16 @@ export default function Notes({ project, onClose, openId }) {
               {n.title}
               <small className="sub">
                 {fmtTime(n.createdAt)}
-                {n.status === 'error' && ' · 요약 실패'}
                 {(n.schedules || []).some((s) => s.status === 'pending') && ' · 스케줄 확인 필요'}
               </small>
             </button>
-            {n.status === 'analyzing' ? (
-              <span className="sum-btn busy">요약 중…</span>
+            {n.status === 'requested' ? (
+              <span className="sum-btn busy">요청됨</span>
             ) : n.status === 'done' ? (
               <button className="sum-btn done" onClick={() => setSelected(n.id)}>요약 보기</button>
-            ) : (
-              <button className="sum-btn" onClick={() => summarize(n)}>✨ 요약</button>
-            )}
+            ) : syncEnabled ? (
+              <button className="sum-btn" onClick={() => requestSummary(n.id)}>✨ 요약</button>
+            ) : null}
           </li>
         ))}
         {notes.length === 0 && <li className="empty">회의록이 없습니다</li>}
