@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCollection, addItem, updateItem, removeItem } from './store.js'
-import { analyzeTranscript, getApiKey, setApiKey, getModel, setModel } from './analyze.js'
+import { getApiKey, setApiKey } from './keys.js'
 
 const md = (k) => { const [, m, d] = k.split('-').map(Number); return `${m}/${d}` }
 const fmtTime = (t) => {
@@ -8,17 +8,15 @@ const fmtTime = (t) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-// 회의 텍스트를 저장하고 바로 분석까지 실행
-export async function saveAndAnalyze(project, text, fileName) {
-  const base = { projectId: project.id, text, title: fileName || '회의록', status: 'new' }
-  const id = await addItem('notes', base)
-  if (getApiKey()) await runAnalysis(id, project, text)
-  return id
+// 회의 텍스트 저장 (요약은 카드의 '요약' 버튼으로)
+export async function saveNote(project, text, fileName) {
+  return addItem('notes', { projectId: project.id, text, title: fileName || '회의록', status: 'new' })
 }
 
-async function runAnalysis(id, project, text) {
+export async function runAnalysis(id, project, text) {
   await updateItem('notes', id, { status: 'analyzing', error: '' })
   try {
+    const { analyzeTranscript } = await import('./analyze.js')
     const r = await analyzeTranscript(text, project.name)
     await updateItem('notes', id, { status: 'done', ...r, ...(r.title ? { title: r.title } : {}) })
   } catch (e) {
@@ -28,19 +26,15 @@ async function runAnalysis(id, project, text) {
 
 function KeySettings({ onDone }) {
   const [key, setKey] = useState(getApiKey())
-  const [model, setM] = useState(getModel())
   return (
     <section className="budget">
-      <h2>OpenAI 연결</h2>
-      <p className="hint">API 키는 이 기기에만 저장됩니다. platform.openai.com → API keys에서 발급.</p>
+      <h2>Claude 연결</h2>
+      <p className="hint">요약에 쓰는 Claude API 키입니다. 이 기기에만 저장됩니다. console.anthropic.com → API Keys에서 발급.</p>
       <div className="create">
-        <input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sk-..." />
+        <input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sk-ant-..." />
       </div>
-      <label className="brow"><span>모델</span>
-        <input value={model} onChange={(e) => setM(e.target.value)} />
-      </label>
       <div className="bactions">
-        <button className="primary" onClick={() => { setApiKey(key); setModel(model); onDone() }}>저장</button>
+        <button className="primary" onClick={() => { setApiKey(key); onDone() }}>저장</button>
       </div>
     </section>
   )
@@ -84,17 +78,27 @@ function NoteDetail({ note, project, onBack }) {
         <h1>{note.title} <small className="sub">{fmtTime(note.createdAt)}</small></h1>
       </header>
 
-      {note.status === 'analyzing' && <p className="hint center">분석 중입니다…</p>}
+      {note.status === 'analyzing' && <p className="hint center">Claude가 요약하는 중입니다…</p>}
       {note.status === 'error' && (
         <section className="budget">
           <p className="neg">{note.error}</p>
-          <button className="schedule-btn" onClick={() => runAnalysis(note.id, project, note.text)}>다시 분석</button>
+          <button className="schedule-btn" onClick={() => runAnalysis(note.id, project, note.text)}>다시 요약</button>
         </section>
       )}
       {note.status === 'new' && (
         getApiKey()
-          ? <button className="schedule-btn" onClick={() => runAnalysis(note.id, project, note.text)}>분석하기</button>
-          : <p className="hint center">OpenAI 키를 등록하면 체크리스트로 요약됩니다 (회의록 목록 화면의 ⚙️)</p>
+          ? <button className="schedule-btn" onClick={() => runAnalysis(note.id, project, note.text)}>✨ 요약</button>
+          : <p className="hint center">Claude API 키를 등록하면 요약할 수 있습니다 (회의록 목록 화면의 ⚙️)</p>
+      )}
+
+      {note.summary && (
+        <section className="budget">
+          <div className="budget-head">
+            <h2>요약</h2>
+            {note.status === 'done' && <button onClick={() => runAnalysis(note.id, project, note.text)}>다시 요약</button>}
+          </div>
+          <p className="summary-text">{note.summary}</p>
+        </section>
       )}
 
       {pending.length > 0 && (
@@ -181,9 +185,13 @@ export default function Notes({ project, onClose, openId }) {
     e.target.value = ''
     if (!f) return
     setBusy(true)
-    const id = await saveAndAnalyze(project, await f.text(), f.name.replace(/\.txt$/i, ''))
+    await saveNote(project, await f.text(), f.name.replace(/\.txt$/i, ''))
     setBusy(false)
-    setSelected(id)
+  }
+
+  const summarize = (n) => {
+    if (!getApiKey()) { setSettings(true); return }
+    runAnalysis(n.id, project, n.text)
   }
 
   return (
@@ -204,16 +212,22 @@ export default function Notes({ project, onClose, openId }) {
 
       <ul className="projects">
         {notes.map((n) => (
-          <li key={n.id}>
-            <button onClick={() => setSelected(n.id)}>
+          <li key={n.id} className="note-card">
+            <button className="note-main" onClick={() => setSelected(n.id)}>
               {n.title}
               <small className="sub">
                 {fmtTime(n.createdAt)}
-                {n.status === 'analyzing' && ' · 분석 중'}
-                {n.status === 'error' && ' · 분석 실패'}
+                {n.status === 'error' && ' · 요약 실패'}
                 {(n.schedules || []).some((s) => s.status === 'pending') && ' · 스케줄 확인 필요'}
               </small>
             </button>
+            {n.status === 'analyzing' ? (
+              <span className="sum-btn busy">요약 중…</span>
+            ) : n.status === 'done' ? (
+              <button className="sum-btn done" onClick={() => setSelected(n.id)}>요약 보기</button>
+            ) : (
+              <button className="sum-btn" onClick={() => summarize(n)}>✨ 요약</button>
+            )}
           </li>
         ))}
         {notes.length === 0 && <li className="empty">회의록이 없습니다</li>}

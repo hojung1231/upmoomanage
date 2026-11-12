@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useCollection, addItem, ensureSeed, syncEnabled } from './store.js'
 import Project from './Project.jsx'
 import UpdatePopup from './UpdatePopup.jsx'
-import { saveAndAnalyze } from './Notes.jsx'
+import { saveNote } from './Notes.jsx'
 
 // 공유하기로 들어온 텍스트(서비스워커가 보관) 꺼내기
 async function takeShared() {
@@ -55,7 +55,7 @@ export default function App() {
     setShared(null)
     setSelectedId(p.id)
     setScreen('project')
-    const noteId = await saveAndAnalyze(p, s.text, s.name)
+    const noteId = await saveNote(p, s.text, s.name)
     setOpened({ projectId: p.id, noteId })
   }
 
