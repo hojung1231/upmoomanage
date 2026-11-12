@@ -56,11 +56,12 @@ export function useCollection(name) {
 export async function addItem(name, data) {
   const item = { ...data, createdAt: Date.now() }
   if (!syncEnabled) {
-    writeLocal(name, [...readLocal(name), { id: newId(), ...item }])
-    return
+    const id = newId()
+    writeLocal(name, [...readLocal(name), { id, ...item }])
+    return id
   }
   const { m, db } = await firestore()
-  await m.addDoc(m.collection(db, name), item)
+  return (await m.addDoc(m.collection(db, name), item)).id
 }
 
 export async function removeItem(name, id) {

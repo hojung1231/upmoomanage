@@ -122,7 +122,25 @@ button { cursor: pointer; }
 .exp { list-style: none; margin: 0; padding: 0; }
 .exp li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .exp li.empty { border: 0; }
-.exp .d { font-size: .8rem; color: var(--muted); width: 42px; flex: none; }
+.exp .d { font-size: .8rem; color: var(--muted); min-width: 42px; white-space: nowrap; flex: none; }
 .exp .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .exp-form input[type=date] { flex: 0 1 150px; }
 .exp-form input[inputmode=numeric] { flex: 0 1 140px; text-align: right; }
+
+/* 회의록 */
+.schedule-btn.third { margin-top: 12px; background: #7c3aed; }
+.schedule-btn.upload { text-align: center; cursor: pointer; }
+.hint { color: var(--muted); font-size: .85rem; margin: 8px 0; }
+.hint.center { text-align: center; }
+.grow { flex: 1; }
+.gear { border: 0; background: none; font-size: 1.3rem; padding: 6px; }
+.projects button .sub { display: block; font-size: .8rem; color: var(--muted); margin-top: 4px; }
+.ask { border-color: #f59e0b; }
+.reason { display: block; font-size: .78rem; color: var(--muted); }
+.checklist { list-style: none; margin: 0; padding: 0; }
+.checklist li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.checklist li.done { color: var(--muted); text-decoration: line-through; }
+.checklist label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.checklist input, .exp input[type=checkbox] { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+.raw { white-space: pre-wrap; word-break: break-word; font: inherit; font-size: .85rem; color: var(--muted); max-height: 50vh; overflow: auto; margin: 8px 0 0; }
+.bactions button:disabled { opacity: .5; }
