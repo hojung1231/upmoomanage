@@ -71,3 +71,46 @@ export async function removeItem(name, id) {
   const { m, db } = await firestore()
   await m.deleteDoc(m.doc(db, name, id))
 }
+
+export async function updateItem(name, id, data) {
+  if (!syncEnabled) {
+    writeLocal(name, readLocal(name).map((i) => (i.id === id ? { ...i, ...data } : i)))
+    return
+  }
+  const { m, db } = await firestore()
+  await m.updateDoc(m.doc(db, name, id), data)
+}
+
+// 처음 실행 시 기본 등록 데이터 (고정 id라 중복 생성되지 않음)
+const SEED_PROJECTS = [
+  {
+    id: 'bbp-phase3',
+    name: 'BBP Phase3 대응 자동화 조립 컨셉 통합 트림 개발_개발계획서',
+    budget: { advance: 84000000, interim: 84000000, balance: 112000000 },
+    createdAt: 1,
+  },
+]
+
+const SEED_EVENTS = [
+  { id: 'bbp-design-done', date: '2026-11-30', title: '정합성 있는 데이터 설계 완료', projectId: 'bbp-phase3', createdAt: 1 },
+  { id: 'bbp-design-fix', date: '2026-12-01', endDate: '2026-12-31', title: '설계 수정', projectId: 'bbp-phase3', createdAt: 2 },
+]
+
+async function seed(name, list) {
+  if (!syncEnabled) {
+    const items = readLocal(name)
+    const missing = list.filter((s) => !items.some((i) => i.id === s.id))
+    if (missing.length) writeLocal(name, [...items, ...missing])
+    return
+  }
+  const { m, db } = await firestore()
+  for (const { id, ...data } of list) {
+    const ref = m.doc(db, name, id)
+    if (!(await m.getDoc(ref)).exists()) await m.setDoc(ref, data)
+  }
+}
+
+export async function ensureSeed() {
+  await seed('projects', SEED_PROJECTS)
+  await seed('events', SEED_EVENTS)
+}

@@ -1,12 +1,16 @@
-import { useState } from 'react'
-import { useCollection, addItem, syncEnabled } from './store.js'
-import Schedule from './Schedule.jsx'
+import { useEffect, useState } from 'react'
+import { useCollection, addItem, ensureSeed, syncEnabled } from './store.js'
+import Project from './Project.jsx'
+import UpdatePopup from './UpdatePopup.jsx'
 
 export default function App() {
   const projects = useCollection('projects')
-  const [screen, setScreen] = useState('home') // 'home' | 'schedule' | 'project'
+  const [screen, setScreen] = useState('home') // 'home' | 'project'
   const [selectedId, setSelectedId] = useState(null)
   const [name, setName] = useState('')
+  const [adding, setAdding] = useState(false)
+
+  useEffect(() => { ensureSeed() }, [])
 
   const sorted = [...projects].sort((a, b) => a.createdAt - b.createdAt)
   const selected = projects.find((p) => p.id === selectedId)
@@ -17,50 +21,53 @@ export default function App() {
     if (!n) return
     addItem('projects', { name: n })
     setName('')
+    setAdding(false)
   }
 
-  if (screen === 'schedule') {
-    return <Schedule projects={sorted} onClose={() => setScreen('home')} />
-  }
-
+  let content
   if (screen === 'project' && selected) {
-    return (
+    content = <Project project={selected} onBack={() => setScreen('home')} />
+  } else {
+    content = (
       <div className="page">
-        <header className="bar">
-          <button className="back" onClick={() => setScreen('home')}>← 뒤로</button>
-          <h1>{selected.name}</h1>
+        <header className="bar home-bar">
+          <h1>프로젝트</h1>
+          <button className="plus" onClick={() => setAdding(!adding)} aria-label="새 프로젝트">+</button>
         </header>
+
+        {adding && (
+          <form className="create" onSubmit={create}>
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="새 프로젝트 이름"
+            />
+            <button type="submit">만들기</button>
+          </form>
+        )}
+
+        <ul className="projects">
+          {sorted.map((p) => (
+            <li key={p.id}>
+              <button onClick={() => { setSelectedId(p.id); setScreen('project') }}>
+                {p.name}
+              </button>
+            </li>
+          ))}
+          {sorted.length === 0 && <li className="empty">+ 버튼으로 프로젝트를 만들어 주세요</li>}
+        </ul>
+
+        {!syncEnabled && <p className="note">연동 설정 전: 이 기기에만 저장됩니다</p>}
+        <p className="note">버전 {__APP_VERSION__}</p>
       </div>
     )
   }
 
   return (
-    <div className="page">
-      <button className="schedule-btn" onClick={() => setScreen('schedule')}>
-        📅 스케줄
-      </button>
-
-      <form className="create" onSubmit={create}>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="새 프로젝트 이름"
-        />
-        <button type="submit">만들기</button>
-      </form>
-
-      <ul className="projects">
-        {sorted.map((p) => (
-          <li key={p.id}>
-            <button onClick={() => { setSelectedId(p.id); setScreen('project') }}>
-              {p.name}
-            </button>
-          </li>
-        ))}
-        {sorted.length === 0 && <li className="empty">프로젝트를 만들어 주세요</li>}
-      </ul>
-
-      {!syncEnabled && <p className="note">연동 설정 전: 이 기기에만 저장됩니다</p>}
-    </div>
+    <>
+      {content}
+      <UpdatePopup />
+    </>
   )
 }
