@@ -13,6 +13,7 @@ if (!existsSync(keyPath)) {
 }
 initializeApp({ credential: cert(JSON.parse(readFileSync(keyPath, 'utf8'))) })
 const db = getFirestore()
+db.settings({ preferRest: true }) // 회사망 등에서 gRPC가 막히는 경우 대비
 
 const [cmd, id, file] = process.argv.slice(2)
 const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10)
