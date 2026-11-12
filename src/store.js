@@ -97,7 +97,7 @@ const SEED_EVENTS = [
 ]
 
 const SEED_EXPENSES = [
-  { id: 'bbp-spent-design', projectId: 'bbp-phase3', type: 'spent', date: '2026-11-12', title: '설계비', amount: 7900000, createdAt: 1 },
+  { id: 'bbp-spent-design', projectId: 'bbp-phase3', type: 'spent', date: '2026-09-01', title: '설계비', amount: 7900000, createdAt: 1 },
 ]
 
 async function seed(name, list) {
