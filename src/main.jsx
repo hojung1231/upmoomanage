@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import './install.js'
 import './style.css'
 
 if ('serviceWorker' in navigator && !import.meta.env.DEV) {

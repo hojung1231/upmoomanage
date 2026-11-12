@@ -3,6 +3,7 @@ import { useCollection, addItem, ensureSeed, syncEnabled, useAuth, signIn, signO
 import Project from './Project.jsx'
 import UpdatePopup from './UpdatePopup.jsx'
 import { saveNote } from './Notes.jsx'
+import { useInstall, isInstalled } from './install.js'
 
 // 공유하기로 들어온 텍스트(서비스워커가 보관) 꺼내기
 async function takeShared() {
@@ -60,6 +61,7 @@ export default function App() {
 }
 
 function Main({ user }) {
+  const { canInstall, install } = useInstall()
   const projects = useCollection('projects')
   const [screen, setScreen] = useState('home') // 'home' | 'project'
   const [selectedId, setSelectedId] = useState(null)
@@ -130,6 +132,7 @@ function Main({ user }) {
       <div className="page">
         <header className="bar home-bar">
           <h1>프로젝트</h1>
+          {canInstall && !isInstalled() && <button className="install-btn" onClick={install}>⬇ 앱 설치</button>}
           <button className="plus" onClick={() => setAdding(!adding)} aria-label="새 프로젝트">+</button>
         </header>
 
