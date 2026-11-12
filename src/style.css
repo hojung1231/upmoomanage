@@ -152,3 +152,26 @@ button { cursor: pointer; }
 .sum-btn.done { background: var(--card); color: #7c3aed; border: 1px solid #7c3aed; }
 .sum-btn.busy { background: var(--line); color: var(--muted); font-weight: 400; font-size: .85rem; }
 .summary-text { white-space: pre-wrap; margin: 4px 0 0; line-height: 1.6; }
+
+/* 할 일 · 설계 완성도 */
+.schedule-btn.fourth { margin-top: 12px; background: #0891b2; }
+.checklist label .del { margin-left: auto; }
+.meter .done-bar { background: #0891b2; }
+.parts { list-style: none; margin: 0; padding: 0; }
+.part { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.part-head { display: flex; align-items: center; gap: 8px; }
+.part-head .t { flex: 1; min-width: 0; }
+.part-head strong { min-width: 44px; text-align: right; }
+.part-head strong.full { color: #059669; }
+.part input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: pointer; margin: 4px 0 0;
+}
+.part input[type=range]::-webkit-slider-runnable-track {
+  height: 8px; border-radius: 4px; background: linear-gradient(to right, #0891b2 var(--p), var(--line) var(--p));
+}
+.part input[type=range]::-moz-range-track { height: 8px; border-radius: 4px; background: var(--line); }
+.part input[type=range]::-moz-range-progress { height: 8px; border-radius: 4px; background: #0891b2; }
+.part input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 3px solid #0891b2; margin-top: -7px; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.part input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid #0891b2; }

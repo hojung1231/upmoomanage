@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Schedule from './Schedule.jsx'
 import Budget from './Budget.jsx'
 import Notes from './Notes.jsx'
+import Todos from './Todos.jsx'
 
 export default function Project({ project, onBack, initialView = null, openNoteId = null }) {
   const [view, setView] = useState(initialView) // null | 'schedule' | 'budget' | 'notes'
@@ -9,6 +10,7 @@ export default function Project({ project, onBack, initialView = null, openNoteI
 
   if (view === 'schedule') return <Schedule project={project} onClose={close} />
   if (view === 'budget') return <Budget project={project} onClose={close} />
+  if (view === 'todos') return <Todos project={project} onClose={close} />
   if (view === 'notes') return <Notes project={project} onClose={close} openId={openNoteId} />
 
   return (
@@ -20,6 +22,7 @@ export default function Project({ project, onBack, initialView = null, openNoteI
 
       <button className="schedule-btn" onClick={() => setView('schedule')}>📅 스케줄</button>
       <button className="schedule-btn second" onClick={() => setView('budget')}>💰 사업비</button>
+      <button className="schedule-btn fourth" onClick={() => setView('todos')}>✅ 할 일</button>
       <button className="schedule-btn third" onClick={() => setView('notes')}>🎙 회의록</button>
     </div>
   )

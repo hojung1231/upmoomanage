@@ -94,6 +94,7 @@ const SEED_PROJECTS = [
 
 const SEED_EVENTS = [
   { id: 'bbp-design-done', date: '2026-11-30', title: '정합성 있는 데이터 설계 완료', projectId: 'bbp-phase3', createdAt: 1 },
+  { id: 'bbp-design-start', date: '2026-11-18', title: '설계 시작 (내장트림 데이터 수정)', projectId: 'bbp-phase3', createdAt: 3 },
   { id: 'bbp-design-fix', date: '2026-12-01', endDate: '2026-12-31', title: '설계 수정', projectId: 'bbp-phase3', createdAt: 2 },
 ]
 
@@ -101,6 +102,23 @@ const SEED_EXPENSES = [
   { id: 'bbp-spent-design', projectId: 'bbp-phase3', type: 'spent', date: '2026-09-01', title: '설계비', amount: 7900000, createdAt: 1 },
   { id: 'bbp-plan-design-service', projectId: 'bbp-phase3', type: 'planned', date: '', title: '설계용역비 (2개월분)', amount: 16000000, createdAt: 2 },
   { id: 'bbp-plan-vacuum-mold', projectId: 'bbp-phase3', type: 'planned', date: '', title: '진공주형제작비', amount: 250000000, createdAt: 3 },
+]
+
+const SEED_TODOS = [
+  { id: 'bbp-todo-vendor', projectId: 'bbp-phase3', title: '설계업체 구하기', done: false, createdAt: 1 },
+]
+
+// 설계업무: 내장트림 데이터 수정 (완성도 %)
+const SEED_PARTS = [
+  { id: 'bbp-part-1', projectId: 'bbp-phase3', name: 'A필러', progress: 0, createdAt: 1 },
+  { id: 'bbp-part-2', projectId: 'bbp-phase3', name: 'B필러', progress: 0, createdAt: 2 },
+  { id: 'bbp-part-3', projectId: 'bbp-phase3', name: '콘솔브라켓 센터', progress: 0, createdAt: 3 },
+  { id: 'bbp-part-4', projectId: 'bbp-phase3', name: '콘솔브라켓 리어', progress: 0, createdAt: 4 },
+  { id: 'bbp-part-5', projectId: 'bbp-phase3', name: '프론트도어 스커프', progress: 0, createdAt: 5 },
+  { id: 'bbp-part-6', projectId: 'bbp-phase3', name: '리어도어 스커프', progress: 0, createdAt: 6 },
+  { id: 'bbp-part-7', projectId: 'bbp-phase3', name: '헤드라이닝', progress: 0, createdAt: 7 },
+  { id: 'bbp-part-8', projectId: 'bbp-phase3', name: '러기지 사이드트림', progress: 0, createdAt: 8 },
+  { id: 'bbp-part-9', projectId: 'bbp-phase3', name: '리어덕트 아세이', progress: 0, createdAt: 9 },
 ]
 
 async function seed(name, list) {
@@ -121,4 +139,6 @@ export async function ensureSeed() {
   await seed('projects', SEED_PROJECTS)
   await seed('events', SEED_EVENTS)
   await seed('expenses', SEED_EXPENSES)
+  await seed('todos', SEED_TODOS)
+  await seed('parts', SEED_PARTS)
 }
