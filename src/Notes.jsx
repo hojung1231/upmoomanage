@@ -25,6 +25,13 @@ function NoteDetail({ note, project, onBack }) {
   const isPicked = (i) => !unpicked.has(i)
   const pickedCount = pending.filter((_, i) => isPicked(i)).length
 
+  // 체크리스트 항목을 프로젝트 투두리스트로 보내기
+  const moveToTodo = async (i) => {
+    const c = checklist[i]
+    const todoId = await addItem('todos', { projectId: project.id, title: c.text, done: false, date: '', noteId: note.id })
+    updateItem('notes', note.id, { checklist: checklist.map((x, j) => (j === i ? { ...x, todoId } : x)) })
+  }
+
   const toggleCheck = (i) =>
     updateItem('notes', note.id, { checklist: checklist.map((c, j) => (j === i ? { ...c, done: !c.done } : c)) })
 
@@ -113,8 +120,11 @@ function NoteDetail({ note, project, onBack }) {
           <h2>체크리스트</h2>
           <ul className="checklist">
             {checklist.map((c, i) => (
-              <li key={i} className={c.done ? 'done' : ''}>
+              <li key={i} className={'check-row' + (c.done ? ' done' : '') + (c.todoId ? ' moved' : '')}>
                 <label><input type="checkbox" checked={c.done} onChange={() => toggleCheck(i)} /> {c.text}</label>
+                {c.todoId
+                  ? <span className="moved-tag">할 일에 있음</span>
+                  : <button className="to-todo" onClick={() => moveToTodo(i)}>→ 할 일</button>}
               </li>
             ))}
           </ul>
@@ -198,6 +208,11 @@ export default function Notes({ project, onClose, openId }) {
             ) : syncEnabled ? (
               <button className="sum-btn" onClick={() => requestSummary(n.id)}>✨ 요약</button>
             ) : null}
+            <button
+              className="card-del"
+              aria-label="회의록 삭제"
+              onClick={() => { if (confirm(`"${n.title}" 회의록을 삭제할까요?`)) removeItem('notes', n.id) }}
+            >✕</button>
           </li>
         ))}
         {notes.length === 0 && <li className="empty">회의록이 없습니다</li>}
