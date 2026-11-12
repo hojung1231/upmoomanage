@@ -27,7 +27,7 @@ export async function runAnalysis(id, project, text) {
 function KeySettings({ onDone }) {
   const [key, setKey] = useState(getApiKey())
   return (
-    <section className="budget">
+    <section className="card">
       <h2>Claude 연결</h2>
       <p className="hint">요약에 쓰는 Claude API 키입니다. 이 기기에만 저장됩니다. console.anthropic.com → API Keys에서 발급.</p>
       <div className="create">
@@ -74,26 +74,26 @@ function NoteDetail({ note, project, onBack }) {
   return (
     <div className="page">
       <header className="bar">
-        <button className="back" onClick={onBack}>← 뒤로</button>
+        <button className="back" onClick={onBack} aria-label="뒤로">‹</button>
         <h1>{note.title} <small className="sub">{fmtTime(note.createdAt)}</small></h1>
       </header>
 
       {note.status === 'analyzing' && <p className="hint center">Claude가 요약하는 중입니다…</p>}
       {note.status === 'error' && (
-        <section className="budget">
+        <section className="card">
           <p className="neg">{note.error}</p>
-          <button className="schedule-btn" onClick={() => runAnalysis(note.id, project, note.text)}>다시 요약</button>
+          <button className="btn-primary block" onClick={() => runAnalysis(note.id, project, note.text)}>다시 요약</button>
         </section>
       )}
       {note.status === 'new' && (
         getApiKey()
-          ? <button className="schedule-btn" onClick={() => runAnalysis(note.id, project, note.text)}>✨ 요약</button>
+          ? <button className="btn-primary block" onClick={() => runAnalysis(note.id, project, note.text)}>✨ 요약</button>
           : <p className="hint center">Claude API 키를 등록하면 요약할 수 있습니다 (회의록 목록 화면의 ⚙️)</p>
       )}
 
       {note.summary && (
-        <section className="budget">
-          <div className="budget-head">
+        <section className="card">
+          <div className="card-head">
             <h2>요약</h2>
             {note.status === 'done' && <button onClick={() => runAnalysis(note.id, project, note.text)}>다시 요약</button>}
           </div>
@@ -102,7 +102,7 @@ function NoteDetail({ note, project, onBack }) {
       )}
 
       {pending.length > 0 && (
-        <section className="budget ask">
+        <section className="card ask">
           <h2>스케줄에 등록할까요?</h2>
           <ul className="exp">
             {pending.map((s, i) => (
@@ -131,7 +131,7 @@ function NoteDetail({ note, project, onBack }) {
       )}
 
       {checklist.length > 0 && (
-        <section className="budget">
+        <section className="card">
           <h2>체크리스트</h2>
           <ul className="checklist">
             {checklist.map((c, i) => (
@@ -144,7 +144,7 @@ function NoteDetail({ note, project, onBack }) {
       )}
 
       {schedules.some((s) => s.status === 'added') && (
-        <section className="budget">
+        <section className="card">
           <h2>등록된 일정</h2>
           <ul className="exp">
             {schedules.filter((s) => s.status === 'added').map((s, i) => (
@@ -154,8 +154,8 @@ function NoteDetail({ note, project, onBack }) {
         </section>
       )}
 
-      <section className="budget">
-        <div className="budget-head">
+      <section className="card">
+        <div className="card-head">
           <h2>원문</h2>
           <button onClick={() => setShowText(!showText)}>{showText ? '접기' : '보기'}</button>
         </div>
@@ -197,14 +197,14 @@ export default function Notes({ project, onClose, openId }) {
   return (
     <div className="page">
       <header className="bar home-bar">
-        <button className="back" onClick={onClose}>← 뒤로</button>
+        <button className="back" onClick={onClose} aria-label="뒤로">‹</button>
         <h1 className="grow">회의록 <small className="sub">{project.name}</small></h1>
         <button className="gear" onClick={() => setSettings(!settings)} aria-label="설정">⚙️</button>
       </header>
 
       {settings && <KeySettings onDone={() => setSettings(false)} />}
 
-      <label className="schedule-btn upload">
+      <label className="btn-primary block upload">
         {busy ? '올리는 중…' : '📄 텍스트 파일 올리기'}
         <input type="file" accept=".txt,text/plain" onChange={onFile} hidden />
       </label>

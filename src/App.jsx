@@ -64,7 +64,7 @@ export default function App() {
     content = (
       <div className="page">
         <header className="bar">
-          <button className="back" onClick={() => setShared(null)}>← 취소</button>
+          <button className="back" onClick={() => setShared(null)} aria-label="취소">‹</button>
           <h1>회의록 받기</h1>
         </header>
         <p className="hint">어느 프로젝트에 넣을까요?</p>
@@ -73,7 +73,7 @@ export default function App() {
             <li key={p.id}><button onClick={() => saveShared(p)}>{p.name}</button></li>
           ))}
         </ul>
-        <section className="budget">
+        <section className="card">
           <h2>{shared.name}</h2>
           <pre className="raw">{shared.text.slice(0, 600)}{shared.text.length > 600 ? '…' : ''}</pre>
         </section>

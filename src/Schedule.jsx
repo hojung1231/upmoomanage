@@ -59,7 +59,7 @@ export default function Schedule({ project, onClose }) {
   return (
     <div className="page schedule">
       <header className="bar">
-        <button className="back" onClick={onClose}>← 뒤로</button>
+        <button className="back" onClick={onClose} aria-label="뒤로">‹</button>
         <h1>스케줄 <small className="sub">{project.name}</small></h1>
       </header>
 

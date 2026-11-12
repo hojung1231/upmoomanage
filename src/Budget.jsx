@@ -27,8 +27,8 @@ function ExpenseList({ title, items, type, projectId }) {
   }
 
   return (
-    <section className="budget">
-      <div className="budget-head">
+    <section className="card">
+      <div className="card-head">
         <h2>{title}</h2>
         <strong>{won(sumOf(items))}</strong>
       </div>
@@ -43,9 +43,9 @@ function ExpenseList({ title, items, type, projectId }) {
         ))}
         {items.length === 0 && <li className="empty">등록된 항목 없음</li>}
       </ul>
-      <form className="create exp-form" onSubmit={add}>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      <form className="create exp-form two-row" onSubmit={add}>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="항목" />
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         <input inputMode="numeric" value={fmt(amount)} onChange={(e) => setAmount(digits(e.target.value))} placeholder="금액" />
         <button type="submit">추가</button>
       </form>
@@ -86,7 +86,7 @@ export default function Budget({ project, onClose }) {
   return (
     <div className="page">
       <header className="bar">
-        <button className="back" onClick={onClose}>← 뒤로</button>
+        <button className="back" onClick={onClose} aria-label="뒤로">‹</button>
         <h1>사업비 <small className="sub">{project.name}</small></h1>
       </header>
 
@@ -107,8 +107,8 @@ export default function Budget({ project, onClose }) {
         </div>
       </section>
 
-      <section className="budget">
-        <div className="budget-head">
+      <section className="card">
+        <div className="card-head">
           <h2>총 사업비</h2>
           {!editing && <button onClick={startEdit}>수정</button>}
         </div>
