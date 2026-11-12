@@ -251,3 +251,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* 2줄 입력: 첫 칸은 한 줄 전체, 나머지는 아래 줄 */
 .create.two-row > input:first-child { flex: 1 1 100%; }
 .create.two-row > input:not(:first-child) { flex: 1 1 0; }
+
+/* 로그인 화면 */
+.gate { min-height: 100vh; display: grid; place-items: center; }
+.gate-card { width: 100%; max-width: 340px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 28px 24px; text-align: center; box-shadow: var(--shadow); }
+.gate-card h1 { margin: 6px 0 4px; font-size: 1.3rem; }
+.gate-icon { font-size: 2rem; width: 56px; height: 56px; margin: 0 auto; border-radius: 16px; background: var(--accent-soft); display: grid; place-items: center; }
+.gate-msg { margin-top: 40vh; }
+.link { border: 0; background: none; color: var(--accent); padding: 0; font-size: inherit; text-decoration: underline; }

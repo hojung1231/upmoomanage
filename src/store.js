@@ -11,12 +11,87 @@ const cfg = {
 export const syncEnabled = Boolean(cfg.apiKey && cfg.projectId)
 
 let fs = null
+let app = null
+async function firebaseApp() {
+  if (app) return app
+  const { initializeApp } = await import('firebase/app')
+  app = initializeApp(cfg)
+  return app
+}
 async function firestore() {
   if (fs) return fs
-  const { initializeApp } = await import('firebase/app')
   const m = await import('firebase/firestore')
-  fs = { m, db: m.getFirestore(initializeApp(cfg)) }
+  fs = { m, db: m.getFirestore(await firebaseApp()) }
   return fs
+}
+
+// ---- 로그인 (구글 계정) ----
+let authMod = null
+async function authModule() {
+  if (authMod) return authMod
+  const a = await import('firebase/auth')
+  authMod = { a, auth: a.getAuth(await firebaseApp()) }
+  return authMod
+}
+
+// { ready, user } — 연동 미설정이면 바로 ready, user 없음
+export function useAuth() {
+  const [state, setState] = useState({ ready: !syncEnabled, user: null })
+  useEffect(() => {
+    if (!syncEnabled) return
+    let unsub = () => {}
+    authModule().then(({ a, auth }) => {
+      unsub = a.onAuthStateChanged(auth, (user) => setState({ ready: true, user }))
+    })
+    return () => unsub()
+  }, [])
+  return state
+}
+
+export async function signIn() {
+  const { a, auth } = await authModule()
+  const provider = new a.GoogleAuthProvider()
+  provider.setCustomParameters({ prompt: 'select_account' })
+  try {
+    await a.signInWithPopup(auth, provider)
+  } catch (e) {
+    if (e?.code === 'auth/popup-blocked' || e?.code === 'auth/operation-not-supported-in-this-environment') {
+      await a.signInWithRedirect(auth, provider)
+    } else if (e?.code !== 'auth/popup-closed-by-user' && e?.code !== 'auth/cancelled-popup-request') {
+      throw e
+    }
+  }
+}
+
+export async function signOut() {
+  const { a, auth } = await authModule()
+  await a.signOut(auth)
+}
+
+// 권한 없음(허용되지 않은 계정) 알림
+const deniedListeners = new Set()
+export function onPermissionDenied(fn) {
+  deniedListeners.add(fn)
+  return () => deniedListeners.delete(fn)
+}
+const reportError = (e) => {
+  if (e?.code === 'permission-denied') deniedListeners.forEach((fn) => fn())
+}
+
+// 연동 전에 이 기기에 저장해 둔 데이터를 처음 로그인할 때 한 번 올리기
+const COLLECTIONS = ['projects', 'events', 'expenses', 'todos', 'parts', 'notes']
+export async function migrateLocal() {
+  if (!syncEnabled) return
+  try { if (localStorage.getItem('upmoo:migrated')) return } catch { return }
+  const { m, db } = await firestore()
+  for (const name of COLLECTIONS) {
+    for (const { id, ...data } of readLocal(name)) {
+      if (!id) continue
+      const ref = m.doc(db, name, id)
+      if (!(await m.getDoc(ref)).exists()) await m.setDoc(ref, data)
+    }
+  }
+  try { localStorage.setItem('upmoo:migrated', '1') } catch {}
 }
 
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
@@ -44,8 +119,10 @@ export function useCollection(name) {
     let alive = true
     firestore().then(({ m, db }) => {
       if (!alive) return
-      unsub = m.onSnapshot(m.collection(db, name), (snap) =>
-        setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      unsub = m.onSnapshot(
+        m.collection(db, name),
+        (snap) => setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        reportError
       )
     })
     return () => { alive = false; unsub() }

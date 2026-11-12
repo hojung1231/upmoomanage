@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useCollection, addItem, ensureSeed, syncEnabled } from './store.js'
+import { useCollection, addItem, ensureSeed, syncEnabled, useAuth, signIn, signOut, onPermissionDenied, migrateLocal } from './store.js'
 import Project from './Project.jsx'
 import UpdatePopup from './UpdatePopup.jsx'
 import { saveNote } from './Notes.jsx'
@@ -25,6 +25,41 @@ async function takeShared() {
 }
 
 export default function App() {
+  const { ready, user } = useAuth()
+  const [denied, setDenied] = useState(false)
+  const [loginError, setLoginError] = useState('')
+  useEffect(() => onPermissionDenied(() => setDenied(true)), [])
+
+  if (syncEnabled && !ready) return <div className="page"><p className="hint center gate-msg">불러오는 중…</p></div>
+  if (syncEnabled && !user) {
+    return (
+      <div className="page gate">
+        <div className="gate-card">
+          <div className="gate-icon" aria-hidden="true">📋</div>
+          <h1>업무관리</h1>
+          <p className="hint">PC와 핸드폰에서 같은 데이터를 쓰려면 구글 계정으로 로그인하세요.</p>
+          <button className="btn-primary block" onClick={() => signIn().catch((e) => setLoginError(e.message))}>구글로 로그인</button>
+          {loginError && <p className="neg hint">{loginError}</p>}
+        </div>
+        <UpdatePopup />
+      </div>
+    )
+  }
+  if (denied) {
+    return (
+      <div className="page gate">
+        <div className="gate-card">
+          <h1>접근할 수 없는 계정</h1>
+          <p className="hint">{user?.email} 계정은 이 앱의 데이터에 접근할 수 없습니다.</p>
+          <button className="btn-primary block" onClick={() => signOut().then(() => setDenied(false))}>다른 계정으로 로그인</button>
+        </div>
+      </div>
+    )
+  }
+  return <Main user={user} />
+}
+
+function Main({ user }) {
   const projects = useCollection('projects')
   const [screen, setScreen] = useState('home') // 'home' | 'project'
   const [selectedId, setSelectedId] = useState(null)
@@ -34,7 +69,7 @@ export default function App() {
   const [opened, setOpened] = useState(null) // 공유 저장 후 바로 열 회의록
 
   useEffect(() => {
-    ensureSeed()
+    migrateLocal().then(ensureSeed).catch(() => {})
     takeShared().then((s) => s && setShared(s))
   }, [])
 
@@ -122,6 +157,11 @@ export default function App() {
         </ul>
 
         {!syncEnabled && <p className="note">연동 설정 전: 이 기기에만 저장됩니다</p>}
+        {user && (
+          <p className="note">
+            {user.email} · <button className="link" onClick={() => signOut()}>로그아웃</button>
+          </p>
+        )}
         <p className="note">버전 {__APP_VERSION__}</p>
       </div>
     )
