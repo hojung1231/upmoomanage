@@ -110,16 +110,41 @@ const SEED_TODOS = [
 
 // 설계업무: 내장트림 데이터 수정 (완성도 %)
 const SEED_PARTS = [
-  { id: 'bbp-part-1', projectId: 'bbp-phase3', name: 'A필러', progress: 0, createdAt: 1 },
-  { id: 'bbp-part-2', projectId: 'bbp-phase3', name: 'B필러', progress: 0, createdAt: 2 },
-  { id: 'bbp-part-3', projectId: 'bbp-phase3', name: '콘솔브라켓 센터', progress: 0, createdAt: 3 },
-  { id: 'bbp-part-4', projectId: 'bbp-phase3', name: '콘솔브라켓 리어', progress: 0, createdAt: 4 },
-  { id: 'bbp-part-5', projectId: 'bbp-phase3', name: '프론트도어 스커프', progress: 0, createdAt: 5 },
-  { id: 'bbp-part-6', projectId: 'bbp-phase3', name: '리어도어 스커프', progress: 0, createdAt: 6 },
-  { id: 'bbp-part-7', projectId: 'bbp-phase3', name: '헤드라이닝', progress: 0, createdAt: 7 },
-  { id: 'bbp-part-8', projectId: 'bbp-phase3', name: '러기지 사이드트림', progress: 0, createdAt: 8 },
-  { id: 'bbp-part-9', projectId: 'bbp-phase3', name: '리어덕트 아세이', progress: 0, createdAt: 9 },
+  { id: 'bbp-part-1', projectId: 'bbp-phase3', name: 'A필러', progress: 0, note: '작년 데이터에서 변경 없는 상태. 프론트 인테리어 모듈 데이터 나오면 매칭부 수정 필요', createdAt: 1 },
+  { id: 'bbp-part-2', projectId: 'bbp-phase3', name: 'B필러', progress: 0, note: '시트벨트 모듈과 아세이 데이터 제작 완료. 브라켓 제작 정합성 검토 및 데이터 수정 필요', createdAt: 2 },
+  { id: 'bbp-part-3', projectId: 'bbp-phase3', name: '콘솔브라켓 센터', progress: 0, note: '5개씩 제작인지 확인 필요', createdAt: 3 },
+  { id: 'bbp-part-4', projectId: 'bbp-phase3', name: '콘솔브라켓 리어', progress: 0, note: '5개씩 제작인지 확인 필요', createdAt: 4 },
+  { id: 'bbp-part-5', projectId: 'bbp-phase3', name: '프론트도어 스커프', progress: 0, note: '작년 제작에서 변경된 부분 없음. 카페트 변경 시 매칭 변경 필요', createdAt: 5 },
+  { id: 'bbp-part-6', projectId: 'bbp-phase3', name: '리어도어 스커프', progress: 0, note: '작년 제작에서 변경된 부분 없음. 카페트 변경 시 매칭 변경 필요', createdAt: 6 },
+  { id: 'bbp-part-7', projectId: 'bbp-phase3', name: '헤드라이닝', progress: 50, note: '50% 정도 설계 진행됨. 회의 후 구체화 필요', createdAt: 7 },
+  { id: 'bbp-part-8', projectId: 'bbp-phase3', name: '러기지 사이드트림', progress: 0, note: '', createdAt: 8 },
+  { id: 'bbp-part-9', projectId: 'bbp-phase3', name: '리어덕트 아세이', progress: 95, note: '일단 설계 완료. 고객사 요청 있을 시 추가 수정', createdAt: 9 },
 ]
+
+// 이미 등록된 기본 항목에 새 필드(예: 각주)가 없으면 기본값 채우기 (사용자가 수정한 건 건드리지 않음)
+async function seedFill(name, list, field, keys) {
+  // 이미 값이 있는 필드(예: 이미 움직인 완성도)는 유지
+  const pick = (seedItem, cur = {}) =>
+    Object.fromEntries(keys.filter((k) => k === field || !cur[k]).map((k) => [k, seedItem[k]]))
+  if (!syncEnabled) {
+    const items = readLocal(name)
+    let changed = false
+    const next = items.map((i) => {
+      const s = list.find((x) => x.id === i.id)
+      if (!s || i[field] !== undefined) return i
+      changed = true
+      return { ...i, ...pick(s, i) }
+    })
+    if (changed) writeLocal(name, next)
+    return
+  }
+  const { m, db } = await firestore()
+  for (const s of list) {
+    const ref = m.doc(db, name, s.id)
+    const snap = await m.getDoc(ref)
+    if (snap.exists() && snap.data()[field] === undefined) await m.updateDoc(ref, pick(s, snap.data()))
+  }
+}
 
 async function seed(name, list) {
   if (!syncEnabled) {
@@ -141,4 +166,5 @@ export async function ensureSeed() {
   await seed('expenses', SEED_EXPENSES)
   await seed('todos', SEED_TODOS)
   await seed('parts', SEED_PARTS)
+  await seedFill('parts', SEED_PARTS, 'note', ['note', 'progress'])
 }

@@ -175,3 +175,9 @@ button { cursor: pointer; }
   -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 3px solid #0891b2; margin-top: -7px; box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
 .part input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid #0891b2; }
+
+/* 부품 각주 */
+.footnote { display: block; width: 100%; text-align: left; border: 0; background: var(--bg); border-radius: 8px; padding: 8px 10px; margin-top: 4px; font-size: .85rem; line-height: 1.5; color: var(--text); overflow-wrap: anywhere; }
+.footnote .muted { color: var(--muted); }
+.note-edit textarea { width: 100%; margin-top: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; font-size: .9rem; resize: vertical; }
+.note-edit .bactions { margin-top: 6px; }

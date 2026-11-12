@@ -6,7 +6,13 @@ const byCreated = (a, b) => a.createdAt - b.createdAt
 // 완성도 슬라이더: 드래그 중엔 화면만 바꾸고, 멈추면 저장
 function PartRow({ part }) {
   const [val, setVal] = useState(part.progress || 0)
+  const [editing, setEditing] = useState(false)
+  const [note, setNote] = useState(part.note || '')
   const timer = useRef(null)
+  const saveNote = () => {
+    updateItem('parts', part.id, { note: note.trim() })
+    setEditing(false)
+  }
   useEffect(() => setVal(part.progress || 0), [part.progress])
 
   const change = (v) => {
@@ -32,6 +38,19 @@ function PartRow({ part }) {
         style={{ '--p': val + '%' }}
         aria-label={`${part.name} 완성도`}
       />
+      {editing ? (
+        <div className="note-edit">
+          <textarea autoFocus rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="각주 입력" />
+          <div className="bactions">
+            <button onClick={() => { setNote(part.note || ''); setEditing(false) }}>취소</button>
+            <button className="primary" onClick={saveNote}>저장</button>
+          </div>
+        </div>
+      ) : (
+        <button className="footnote" onClick={() => { setNote(part.note || ''); setEditing(true) }}>
+          {part.note ? <>📝 {part.note}</> : <span className="muted">+ 각주 추가</span>}
+        </button>
+      )}
     </li>
   )
 }
