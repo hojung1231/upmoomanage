@@ -273,3 +273,26 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .checklist li.check-row.done label { color: var(--muted); text-decoration: line-through; }
 .to-todo { flex: none; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
 .moved-tag { flex: none; font-size: .72rem; color: var(--muted); background: var(--soft); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+
+/* 회의 녹음 */
+.note-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.note-actions > * { text-align: center; display: block; }
+.note-actions > :only-child { grid-column: 1 / -1; }
+.rec-open { background: var(--danger); }
+.rec-card { display: flex; flex-direction: column; gap: 10px; }
+.rec-top { display: flex; align-items: center; gap: 8px; }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.rec-dot.on { background: var(--danger); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .3; } }
+.rec-time { font-size: 1.4rem; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.rec-state { margin-left: auto; font-size: .8rem; color: var(--muted); }
+.rec-text { min-height: 45vh; max-height: 55vh; overflow-y: auto; background: var(--soft); border-radius: 10px; padding: 10px 12px; line-height: 1.6; font-size: .92rem; }
+.rec-text p { margin: 0 0 6px; }
+.rec-ts { color: var(--muted); font-size: .75rem; font-variant-numeric: tabular-nums; }
+.rec-interim { color: var(--muted); font-style: italic; }
+.rec-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rec-btn { border: 0; border-radius: 12px; padding: 13px; font-weight: 700; color: #fff; }
+.rec-btn.start { background: var(--danger); }
+.rec-btn.pause { background: var(--warn); }
+.rec-btn.save { background: var(--text); color: var(--card); }
+.rec-btn:disabled { opacity: .4; }

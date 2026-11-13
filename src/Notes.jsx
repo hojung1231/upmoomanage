@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useCollection, addItem, updateItem, removeItem, syncEnabled } from './store.js'
+import Recorder, { canRecord } from './Recorder.jsx'
 
 const md = (k) => { const [, m, d] = k.split('-').map(Number); return `${m}/${d}` }
 const fmtTime = (t) => {
@@ -163,8 +164,22 @@ export default function Notes({ project, onClose, openId }) {
     .sort((a, b) => b.createdAt - a.createdAt)
   const [selected, setSelected] = useState(openId || null)
   const [busy, setBusy] = useState(false)
+  const [recording, setRecording] = useState(false)
 
   const note = notes.find((n) => n.id === selected)
+  if (recording) {
+    return (
+      <Recorder
+        onCancel={() => setRecording(false)}
+        onSave={async (text) => {
+          const d = new Date()
+          const id = await saveNote(project, text, `회의 녹음 ${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`)
+          setRecording(false)
+          setSelected(id)
+        }}
+      />
+    )
+  }
   if (note) return <NoteDetail note={note} project={project} onBack={() => setSelected(null)} />
 
   const onFile = async (e) => {
@@ -183,10 +198,13 @@ export default function Notes({ project, onClose, openId }) {
         <h1>회의록 <small className="sub">{project.name}</small></h1>
       </header>
 
-      <label className="btn-primary block upload">
-        {busy ? '올리는 중…' : '📄 텍스트 파일 올리기'}
-        <input type="file" accept=".txt,text/plain" onChange={onFile} hidden />
-      </label>
+      <div className="note-actions">
+        {canRecord && <button className="btn-primary rec-open" onClick={() => setRecording(true)}>🎙 녹음</button>}
+        <label className="btn-primary upload">
+          {busy ? '올리는 중…' : '📄 텍스트 파일 올리기'}
+          <input type="file" accept=".txt,text/plain" onChange={onFile} hidden />
+        </label>
+      </div>
       <p className="hint center">갤럭시 음성녹음 → 텍스트 변환 → 공유 → 업무관리 로도 넣을 수 있습니다</p>
       {!syncEnabled && <p className="hint center">요약 요청은 PC·폰 연동 설정 후 사용할 수 있습니다</p>}
       {notes.some((n) => n.status === 'requested') && <p className="hint center">{ASK_TEXT}</p>}
