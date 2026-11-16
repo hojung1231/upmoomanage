@@ -213,12 +213,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .part-head .t { flex: 1; min-width: 0; font-weight: 500; }
 .part-head strong { min-width: 42px; text-align: right; font-size: .9rem; color: var(--accent); }
 .part-head strong.full { color: var(--ok); }
-.part input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; background: transparent; cursor: pointer; margin: 2px 0 0; }
-.part input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--p), var(--soft) var(--p)); }
-.part input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--soft); }
-.part input[type=range]::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--accent); }
-.part input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); margin-top: -7px; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
-.part input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); }
+.part-card input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; background: transparent; cursor: pointer; margin: 2px 0 0; }
+.part-card input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--p), var(--soft) var(--p)); }
+.part-card input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--soft); }
+.part-card input[type=range]::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--accent); }
+.part-card input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); margin-top: -7px; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.part-card input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); }
 .footnote { display: block; width: 100%; text-align: left; border: 0; background: var(--soft); border-radius: 8px; padding: 8px 10px; margin-top: 2px; font-size: .82rem; line-height: 1.5; color: var(--text); overflow-wrap: anywhere; }
 .footnote .muted { color: var(--muted); }
 .note-edit textarea { width: 100%; margin-top: 4px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font-size: .88rem; resize: vertical; }
@@ -296,3 +296,46 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .rec-btn.pause { background: var(--warn); }
 .rec-btn.save { background: var(--text); color: var(--card); }
 .rec-btn:disabled { opacity: .4; }
+
+/* 데이터: 부품 카드 */
+.part-card { padding-bottom: 12px; }
+.pc-head { display: flex; align-items: center; gap: 8px; }
+.pc-head h2 { flex: 1; min-width: 0; font-size: 1rem; }
+.pc-meta { display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; font-size: .78rem; color: var(--muted); }
+.pc-meta strong { font-size: .95rem; color: var(--accent); }
+.pc-meta strong.full { color: var(--ok); }
+.part-card .footnote { margin-top: 6px; }
+.folder-row { display: flex; gap: 6px; align-items: stretch; }
+.folder-row .footnote { flex: 1; min-width: 0; }
+.folder-row .copy { flex: none; margin-top: 6px; border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 0 10px; font-size: .8rem; color: var(--text); }
+.note-edit input { width: 100%; margin-top: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font-size: .88rem; }
+.badge { flex: none; display: inline-block; border: 0; border-radius: 999px; padding: 3px 10px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.st-wait { background: var(--soft); color: var(--muted); }
+.st-doing { background: var(--accent-soft); color: var(--accent); }
+.st-review { background: #fff1dc; color: #b26a00; }
+.st-done { background: #dcf3e9; color: var(--ok); }
+@media (prefers-color-scheme: dark) { .st-review { background: #3a2c14; color: #f2a43a; } .st-done { background: #143326; color: #4cc896; } }
+.status-sum { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.req-box { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.req-box .card-head { margin-bottom: 4px; }
+.req-box h3 { margin: 0; font-size: .88rem; font-weight: 700; }
+.req-box h3 .count { font-size: .78rem; margin-left: 4px; }
+.reqs { list-style: none; margin: 0; padding: 0; }
+.req { padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.req:last-child { border-bottom: 0; }
+.req.done .req-text { color: var(--muted); text-decoration: line-through; }
+.req-head { display: flex; align-items: center; gap: 8px; }
+.req-date { flex: 1; font-size: .75rem; color: var(--muted); }
+.req-text { margin: 6px 0 0; font-size: .88rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.thumbs img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; }
+.thumb-edit { position: relative; }
+.thumb-edit button { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: var(--text); color: var(--card); font-size: .7rem; }
+.req-new textarea { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font-size: .88rem; resize: vertical; }
+.req-new .bactions { align-items: center; margin-top: 8px; }
+.req-new .grow { flex: 1; }
+.pick { border: 1px solid var(--line); border-radius: 8px; padding: 5px 12px; font-size: .85rem; cursor: pointer; }
+.req-box .link { margin-top: 6px; font-size: .8rem; }
+form.create.card { margin-top: 12px; }
+.viewer { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
+.viewer img { max-width: 100%; max-height: 100%; border-radius: 6px; }
