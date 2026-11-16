@@ -245,3 +245,40 @@ export async function ensureSeed() {
   await seed('parts', SEED_PARTS)
   await seedFill('parts', SEED_PARTS, 'note', ['note', 'progress'])
 }
+
+// ---- 첨부 파일 (문서 등): Firestore 문서 1MB 제한 때문에 조각내서 저장 ----
+const CHUNK = 700 * 1024 // base64 글자 수
+export const MAX_FILE = 20 * 1024 * 1024
+const toBase64 = (file) => new Promise((resolve, reject) => {
+  const r = new FileReader()
+  r.onload = () => resolve(String(r.result).split(',')[1] || '')
+  r.onerror = () => reject(new Error('파일을 읽지 못했습니다'))
+  r.readAsDataURL(file)
+})
+export async function saveFile(meta, file) {
+  if (!syncEnabled) throw new Error('파일 첨부는 PC·폰 연동 설정 후 사용할 수 있습니다')
+  if (file.size > MAX_FILE) throw new Error(`"${file.name}" 은 20MB를 넘어서 올릴 수 없습니다`)
+  const b64 = await toBase64(file)
+  const n = Math.max(1, Math.ceil(b64.length / CHUNK))
+  const { m, db } = await firestore()
+  const ref = m.doc(m.collection(db, 'files'))
+  for (let i = 0; i < n; i++) {
+    await m.setDoc(m.doc(db, 'fileChunks', `${ref.id}_${i}`), { fileId: ref.id, i, data: b64.slice(i * CHUNK, (i + 1) * CHUNK) })
+  }
+  await m.setDoc(ref, { ...meta, name: file.name, type: file.type || 'application/octet-stream', size: file.size, chunks: n, createdAt: Date.now() })
+  return ref.id
+}
+export async function fileBlob(f) {
+  const { m, db } = await firestore()
+  let b64 = ''
+  for (let i = 0; i < f.chunks; i++) b64 += (await m.getDoc(m.doc(db, 'fileChunks', `${f.id}_${i}`))).data()?.data || ''
+  const bin = atob(b64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return new Blob([bytes], { type: f.type })
+}
+export async function removeFile(f) {
+  const { m, db } = await firestore()
+  await m.deleteDoc(m.doc(db, 'files', f.id))
+  for (let i = 0; i < (f.chunks || 0); i++) await m.deleteDoc(m.doc(db, 'fileChunks', `${f.id}_${i}`))
+}

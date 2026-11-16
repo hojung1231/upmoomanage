@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCollection, addItem, updateItem, removeItem } from './store.js'
+import { shrink, useDrop, pastedImages } from './media.js'
 
 const byCreated = (a, b) => a.createdAt - b.createdAt
 const PART_STATUS = ['시작 전', '진행중', '검토중', '완료']
@@ -11,40 +12,7 @@ const fmtDate = (t) => {
 }
 const cycle = (list, cur) => list[(list.indexOf(cur) + 1) % list.length]
 
-// 사진을 줄여서 JPEG 데이터로 (한 장 수백 KB 이내)
-function shrink(file, max = 1400) {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      const k = Math.min(1, max / Math.max(img.width, img.height))
-      const c = document.createElement('canvas')
-      c.width = Math.round(img.width * k)
-      c.height = Math.round(img.height * k)
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
-      URL.revokeObjectURL(url)
-      resolve(c.toDataURL('image/jpeg', 0.72))
-    }
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('사진을 읽지 못했습니다')) }
-    img.src = url
-  })
-}
-
 const touch = (partId) => updateItem('parts', partId, { updatedAt: Date.now() })
-
-// 붙여넣기(Ctrl+V)한 클립보드에서 이미지 파일만 꺼내기
-const droppedImages = (e) => [...(e.dataTransfer?.files || [])].filter((f) => f.type.startsWith("image/"))
-// 드래그앤드롭 받기: 끌어오는 동안 테두리 강조
-function useDrop(onFiles) {
-  const [over, setOver] = useState(false)
-  return [over, {
-    onDragOver: (e) => { if ([...(e.dataTransfer?.types || [])].includes("Files")) { e.preventDefault(); setOver(true) } },
-    onDragLeave: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver(false) },
-    onDrop: (e) => { e.preventDefault(); setOver(false); const f = droppedImages(e); if (f.length) onFiles(f) },
-  }]
-}
-const pastedImages = (e) => [...(e.clipboardData?.items || [])]
-  .filter((i) => i.type.startsWith("image/")).map((i) => i.getAsFile()).filter(Boolean)
 
 // Ctrl+V 붙여넣기 대상: 선택된 수정요청 id → 스크린샷 추가 함수
 const pasteTargets = new Map()

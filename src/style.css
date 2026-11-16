@@ -353,3 +353,33 @@ form.create.card { margin-top: 12px; }
 .req { cursor: default; border-radius: 8px; }
 .req.selected { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent-soft); padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
 .paste-hint { margin: 6px 0 0; font-size: .78rem; color: var(--accent); }
+
+/* 예정된 회의 */
+.meet-box .card-head { margin-bottom: 4px; }
+.meet-list { list-style: none; margin: 0; padding: 0; }
+.meet-card > button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--field); border-radius: 10px; padding: 10px 12px; margin-top: 8px; color: var(--text); }
+.meet-card.today > button { border-color: var(--accent); background: var(--accent-soft); }
+.meet-card.past > button { opacity: .6; }
+.meet-when { font-size: .78rem; font-weight: 700; color: var(--accent); }
+.meet-card strong { font-size: .95rem; }
+.meet-box .link { margin-top: 8px; font-size: .8rem; }
+.meet-new { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.meet-new input:not([type=checkbox]) { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); }
+.meet-new .row { display: flex; gap: 8px; }
+.meet-new .row input { flex: 1; min-width: 0; }
+.meet-new .chk { font-size: .85rem; display: flex; align-items: center; gap: 6px; }
+.meet-new .bactions { margin-top: 0; }
+.meet-head { display: block; width: 100%; text-align: left; margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .88rem; color: var(--text); background: var(--card); }
+.meet-head .muted { color: var(--muted); font-size: .78rem; }
+.meet-memo { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-size: .88rem; line-height: 1.5; resize: vertical; }
+.check-row:has(.agenda-text) { display: flex; align-items: center; gap: 8px; }
+.agenda-text { flex: 1; min-width: 0; cursor: text; overflow-wrap: anywhere; }
+.agenda-edit { flex: 1; }
+.agenda-edit input { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--text); }
+.files { list-style: none; margin: 0 0 6px; padding: 0; }
+.files li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: .85rem; }
+.files li:last-child { border-bottom: 0; }
+.files .file-name { flex: 1; min-width: 0; text-align: left; border: 0; background: none; padding: 0; color: var(--accent); overflow-wrap: anywhere; }
+.files .muted { color: var(--muted); font-size: .75rem; }
+.photo-head { margin-top: 12px; }
+.section-title { font-size: .95rem; margin: 20px 4px 0; }

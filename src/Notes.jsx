@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useCollection, addItem, updateItem, removeItem, syncEnabled } from './store.js'
 import Recorder, { canRecord } from './Recorder.jsx'
+import { MeetingList, MeetingDetail } from './Meetings.jsx'
 
 const md = (k) => { const [, m, d] = k.split('-').map(Number); return `${m}/${d}` }
 const fmtTime = (t) => {
@@ -165,6 +166,9 @@ export default function Notes({ project, onClose, openId }) {
   const [selected, setSelected] = useState(openId || null)
   const [busy, setBusy] = useState(false)
   const [recording, setRecording] = useState(false)
+  const meetings = useCollection('meetings')
+  const [meetingId, setMeetingId] = useState(null)
+  const meeting = meetings.find((m) => m.id === meetingId)
 
   const note = notes.find((n) => n.id === selected)
   if (recording) {
@@ -180,6 +184,7 @@ export default function Notes({ project, onClose, openId }) {
       />
     )
   }
+  if (meeting) return <MeetingDetail meeting={meeting} project={project} onBack={() => setMeetingId(null)} />
   if (note) return <NoteDetail note={note} project={project} onBack={() => setSelected(null)} />
 
   const onFile = async (e) => {
@@ -198,6 +203,9 @@ export default function Notes({ project, onClose, openId }) {
         <h1>회의록 <small className="sub">{project.name}</small></h1>
       </header>
 
+      <MeetingList project={project} onOpen={setMeetingId} />
+
+      <h2 className="section-title">회의록</h2>
       <div className="note-actions">
         {canRecord && <button className="btn-primary rec-open" onClick={() => setRecording(true)}>🎙 녹음</button>}
         <label className="btn-primary upload">
