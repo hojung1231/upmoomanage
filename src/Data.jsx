@@ -210,7 +210,7 @@ function PartCard({ part, requests, photos, onView, sel, onSelect }) {
         <div className="note-edit">
           {edit === 'note'
             ? <textarea autoFocus rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="각주 입력" />
-            : <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={edit === 'latest' ? '예) BBP_HEADLINING_R03.CATPart' : '예) D:\\설계\\BBP\\헤드라이닝'} />}
+            : <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); saveEdit() } else if (e.key === 'Escape') setEdit(null) }} placeholder={edit === 'latest' ? '예) BBP_HEADLINING_R03.CATPart' : '예) D:\\설계\\BBP\\헤드라이닝'} />}
           <div className="bactions">
             <button onClick={() => setEdit(null)}>취소</button>
             <button className="primary" onClick={saveEdit}>저장</button>
