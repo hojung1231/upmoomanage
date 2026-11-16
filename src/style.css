@@ -389,3 +389,10 @@ form.create.card { margin-top: 12px; }
 .files .muted { color: var(--muted); font-size: .75rem; }
 .photo-head { margin-top: 12px; }
 .section-title { font-size: .95rem; margin: 20px 4px 0; }
+.folder-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.folder-msg { margin: 4px 2px 0; }
+.setup-link { display: block; margin-top: 10px; font-size: .8rem; }
+.setup-box { margin-top: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.setup-steps { margin: 0; padding-left: 18px; font-size: .85rem; line-height: 1.7; }
+.setup-steps a { color: var(--accent); }
+.setup-steps .bactions { justify-content: flex-start; margin-top: 6px; }

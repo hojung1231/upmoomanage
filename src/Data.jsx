@@ -12,6 +12,11 @@ const fmtDate = (t) => {
 }
 const cycle = (list, cur) => list[(list.indexOf(cur) + 1) % list.length]
 
+// PC 폴더 바로 열기: 설정 파일을 실행한 PC에서만 upmu-folder: 링크가 탐색기를 연다
+const OPENER_KEY = 'upmu:folderOpener'
+export const hasOpener = () => { try { return localStorage.getItem(OPENER_KEY) === '1' } catch { return false } }
+export const setOpener = (on) => { try { on ? localStorage.setItem(OPENER_KEY, '1') : localStorage.removeItem(OPENER_KEY) } catch {} }
+
 const touch = (partId) => updateItem('parts', partId, { updatedAt: Date.now() })
 
 // Ctrl+V 붙여넣기 대상: 선택된 수정요청 id → 스크린샷 추가 함수
@@ -144,7 +149,8 @@ function NewRequest({ part, onDone }) {
 
 function PartCard({ part, requests, photos, onView, sel, onSelect }) {
   const [val, setVal] = useState(part.progress || 0)
-  const [edit, setEdit] = useState(null) // 'note' | 'folder'
+  const [edit, setEdit] = useState(null) // 'note' | 'folder' | 'latest'
+  const [folderMsg, setFolderMsg] = useState('')
   const [draft, setDraft] = useState('')
   const [adding, setAdding] = useState(false)
   const [open, setOpen] = useState(false)
@@ -158,7 +164,8 @@ function PartCard({ part, requests, photos, onView, sel, onSelect }) {
   }
   const startEdit = (k) => { setDraft(part[k] || ''); setEdit(k) }
   const saveEdit = () => {
-    updateItem('parts', part.id, { [edit]: draft.trim(), updatedAt: Date.now() })
+    const v = draft.trim()
+    updateItem('parts', part.id, { [edit]: v, updatedAt: Date.now(), ...(edit === 'latest' && v !== (part.latest || '') ? { latestAt: Date.now() } : {}) })
     setEdit(null)
   }
   const status = part.status || '시작 전'
@@ -166,8 +173,14 @@ function PartCard({ part, requests, photos, onView, sel, onSelect }) {
   const doneReq = requests.filter((r) => r.status === '완료').length
   const shown = open ? requests : requests.filter((r) => r.status !== '완료')
 
-  const copyFolder = async () => {
-    try { await navigator.clipboard.writeText(part.folder); alert('폴더 경로를 복사했습니다') } catch {}
+  const openFolder = async () => {
+    if (hasOpener()) {
+      window.location.href = 'upmu-folder:' + escape(part.folder)
+      return
+    }
+    try { await navigator.clipboard.writeText(part.folder) } catch {}
+    setFolderMsg("경로를 복사했습니다. 탐색기 주소창에 붙여넣으세요. (바로 열리게 하려면 맨 위 'PC에서 폴더 바로 열기' 설정)")
+    setTimeout(() => setFolderMsg(''), 6000)
   }
 
   return (
@@ -197,7 +210,7 @@ function PartCard({ part, requests, photos, onView, sel, onSelect }) {
         <div className="note-edit">
           {edit === 'note'
             ? <textarea autoFocus rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="각주 입력" />
-            : <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="예) D:\설계\BBP\헤드라이닝" />}
+            : <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={edit === 'latest' ? '예) BBP_HEADLINING_R03.CATPart' : '예) D:\\설계\\BBP\\헤드라이닝'} />}
           <div className="bactions">
             <button onClick={() => setEdit(null)}>취소</button>
             <button className="primary" onClick={saveEdit}>저장</button>
@@ -206,11 +219,21 @@ function PartCard({ part, requests, photos, onView, sel, onSelect }) {
       ) : (
         <>
           <div className="folder-row">
-            <button className="footnote" onClick={() => startEdit('folder')}>
-              {part.folder ? <>📁 {part.folder}</> : <span className="muted">📁 폴더 경로 추가</span>}
-            </button>
-            {part.folder && <button className="copy" onClick={copyFolder}>복사</button>}
+            {part.folder ? (
+              <>
+                <button className="footnote folder-link" onClick={openFolder} title="눌러서 폴더 열기">📁 {part.folder}</button>
+                <button className="copy" onClick={() => startEdit('folder')}>수정</button>
+              </>
+            ) : (
+              <button className="footnote" onClick={() => startEdit('folder')}><span className="muted">📁 폴더 경로 추가</span></button>
+            )}
           </div>
+          {folderMsg && <p className="hint folder-msg">{folderMsg}</p>}
+          <button className="footnote" onClick={() => startEdit('latest')}>
+            {part.latest
+              ? <>🗂 최신 데이터 <strong>{part.latest}</strong>{part.latestAt ? <span className="muted"> · {fmtDate(part.latestAt)}</span> : null}</>
+              : <span className="muted">🗂 최신 데이터명 추가</span>}
+          </button>
           <button className="footnote" onClick={() => startEdit('note')}>
             {part.note ? <>📝 {part.note}</> : <span className="muted">📝 각주 추가</span>}
           </button>
@@ -243,6 +266,9 @@ export default function Data({ project, onClose }) {
   const [name, setName] = useState('')
   const [view, setView] = useState(null)
   const [sel, setSel] = useState(null) // 선택된 수정요청 (Ctrl+V 대상)
+  const [opener, setOpenerState] = useState(hasOpener())
+  const [showSetup, setShowSetup] = useState(false)
+  const isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent)
   const selRef = useRef(null)
   selRef.current = sel
   // 페이지 어디서든 Ctrl+V: 클립보드 이미지를 선택된 수정요청에 넣는다
@@ -285,6 +311,30 @@ export default function Data({ project, onClose }) {
         <div className="status-sum">
           {counts.map(([s, n]) => <span key={s} className={'badge ' + statusClass(s)}>{s} {n}</span>)}
         </div>
+        {!isPhone && (
+          <button className="link setup-link" onClick={() => setShowSetup(!showSetup)}>
+            🖥 PC에서 폴더 바로 열기 {opener ? '(이 PC 설정됨)' : '설정'}
+          </button>
+        )}
+        {showSetup && (
+          <div className="setup-box">
+            {opener ? (
+              <>
+                <p className="hint">이 PC에서는 폴더 경로를 누르면 탐색기로 열립니다.</p>
+                <div className="bactions"><button onClick={() => { setOpener(false); setOpenerState(false) }}>설정 해제 (경로 복사로 돌아가기)</button></div>
+              </>
+            ) : (
+              <ol className="setup-steps">
+                <li><a href="./upmu-folder-setup.cmd" download>설정 파일 받기 (upmu-folder-setup.cmd)</a></li>
+                <li>받은 파일을 더블클릭해서 실행 (관리자 권한 필요 없음, 이 PC 사용자에게만 적용)</li>
+                <li>
+                  아래 버튼을 누르기 → 폴더를 처음 열 때 크롬이 "열기"를 물으면 <b>항상 허용</b> 체크 후 열기
+                  <div className="bactions"><button className="primary" onClick={() => { setOpener(true); setOpenerState(true); setShowSetup(false) }}>설정 완료</button></div>
+                </li>
+              </ol>
+            )}
+          </div>
+        )}
       </section>
 
       {parts.map((p) => (
