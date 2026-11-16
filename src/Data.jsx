@@ -32,28 +32,88 @@ function shrink(file, max = 1400) {
 
 const touch = (partId) => updateItem('parts', partId, { updatedAt: Date.now() })
 
+// 붙여넣기(Ctrl+V)한 클립보드에서 이미지 파일만 꺼내기
+const droppedImages = (e) => [...(e.dataTransfer?.files || [])].filter((f) => f.type.startsWith("image/"))
+// 드래그앤드롭 받기: 끌어오는 동안 테두리 강조
+function useDrop(onFiles) {
+  const [over, setOver] = useState(false)
+  return [over, {
+    onDragOver: (e) => { if ([...(e.dataTransfer?.types || [])].includes("Files")) { e.preventDefault(); setOver(true) } },
+    onDragLeave: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver(false) },
+    onDrop: (e) => { e.preventDefault(); setOver(false); const f = droppedImages(e); if (f.length) onFiles(f) },
+  }]
+}
+const pastedImages = (e) => [...(e.clipboardData?.items || [])]
+  .filter((i) => i.type.startsWith("image/")).map((i) => i.getAsFile()).filter(Boolean)
+
 function Request({ r, photos, onView }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+  const [busy, setBusy] = useState(false)
+  const saveText = () => {
+    updateItem("requests", r.id, { text: draft.trim(), updatedAt: Date.now() })
+    touch(r.partId)
+    setEditing(false)
+  }
+  const addShots = async (files) => {
+    if (!files.length) return
+    setBusy(true)
+    try {
+      for (const f of files) {
+        const data = await shrink(f)
+        await addItem("photos", { projectId: r.projectId, partId: r.partId, requestId: r.id, data })
+      }
+      updateItem("requests", r.id, { updatedAt: Date.now() })
+      touch(r.partId)
+    } catch (err) { alert(err.message) }
+    setBusy(false)
+  }
+  const pick = (e) => { const f = [...(e.target.files || [])]; e.target.value = ""; addShots(f) }
+  const onPaste = (e) => { const f = pastedImages(e); if (f.length) { e.preventDefault(); addShots(f) } }
+  const [over, dropProps] = useDrop(addShots)
+  const delShot = (p) => { if (confirm("이 스크린샷을 삭제할까요?")) { removeItem("photos", p.id); touch(r.partId) } }
   const setStatus = () => {
-    updateItem('requests', r.id, { status: cycle(REQ_STATUS, r.status || '요청'), updatedAt: Date.now() })
+    updateItem("requests", r.id, { status: cycle(REQ_STATUS, r.status || "요청"), updatedAt: Date.now() })
     touch(r.partId)
   }
   const del = () => {
-    if (!confirm('이 수정요청을 삭제할까요?')) return
-    photos.forEach((p) => removeItem('photos', p.id))
-    removeItem('requests', r.id)
+    if (!confirm("이 수정요청을 삭제할까요?")) return
+    photos.forEach((p) => removeItem("photos", p.id))
+    removeItem("requests", r.id)
     touch(r.partId)
   }
   return (
-    <li className={'req' + (r.status === '완료' ? ' done' : '')}>
+    <li className={"req" + (r.status === "완료" ? " done" : "") + (over ? " drop-over" : "")} onPaste={onPaste} tabIndex={-1} {...dropProps}>
       <div className="req-head">
-        <button className={'badge ' + statusClass(r.status || '요청')} onClick={setStatus} title="눌러서 상태 변경">{r.status || '요청'}</button>
+        <button className={"badge " + statusClass(r.status || "요청")} onClick={setStatus} title="눌러서 상태 변경">{r.status || "요청"}</button>
         <span className="req-date">{fmtDate(r.updatedAt || r.createdAt)}</span>
+        <label className="shot-add" title="스크린샷·사진 추가 (PC는 이 항목에 끌어다 놓거나 Ctrl+V)">
+          {busy ? "올리는 중…" : "🖼 추가"}
+          <input type="file" accept="image/*" multiple onChange={pick} hidden />
+        </label>
         <button className="del" onClick={del} aria-label="수정요청 삭제">✕</button>
       </div>
-      {r.text && <p className="req-text">{r.text}</p>}
+      {editing ? (
+        <div className="note-edit">
+          <textarea autoFocus rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="수정요청 내용 (스크린샷은 끌어다 놓거나 Ctrl+V)" />
+          <div className="bactions">
+            <button onClick={() => setEditing(false)}>취소</button>
+            <button className="primary" onClick={saveText}>저장</button>
+          </div>
+        </div>
+      ) : (
+        <button className="req-text" onClick={() => { setDraft(r.text || ""); setEditing(true) }} title="눌러서 수정">
+          {r.text || <span className="muted">+ 내용 추가</span>}
+        </button>
+      )}
       {photos.length > 0 && (
         <div className="thumbs">
-          {photos.map((p) => <img key={p.id} src={p.data} alt="" onClick={() => onView(p.data)} />)}
+          {photos.map((p) => (
+            <span key={p.id} className="thumb-edit">
+              <img src={p.data} alt="" onClick={() => onView(p.data)} />
+              <button onClick={() => delShot(p)} aria-label="스크린샷 삭제">✕</button>
+            </span>
+          ))}
         </div>
       )}
     </li>
@@ -73,6 +133,10 @@ function NewRequest({ part, onDone }) {
       setPics((p) => [...p, ...out])
     } catch (err) { alert(err.message) }
   }
+  const addPics = async (files) => {
+    try { const out = []; for (const x of files) out.push(await shrink(x)); setPics((p) => [...p, ...out]) } catch (err) { alert(err.message) }
+  }
+  const [over, dropProps] = useDrop(addPics)
   const save = async () => {
     if (!text.trim() && pics.length === 0) return
     setBusy(true)
@@ -84,8 +148,8 @@ function NewRequest({ part, onDone }) {
     onDone()
   }
   return (
-    <div className="req-new">
-      <textarea autoFocus rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="수정요청 내용" />
+    <div className={"req-new" + (over ? " drop-over" : "")} {...dropProps} onPaste={(e) => { const f = pastedImages(e); if (f.length) { e.preventDefault(); addPics(f) } }}>
+      <textarea autoFocus rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="수정요청 내용 (스크린샷은 끌어다 놓거나 Ctrl+V)" />
       {pics.length > 0 && (
         <div className="thumbs">
           {pics.map((p, i) => (
@@ -97,7 +161,7 @@ function NewRequest({ part, onDone }) {
         </div>
       )}
       <div className="bactions">
-        <label className="pick">📷 사진<input type="file" accept="image/*" multiple onChange={pick} hidden /></label>
+        <label className="pick">🖼 스크린샷·사진<input type="file" accept="image/*" multiple onChange={pick} hidden /></label>
         <span className="grow" />
         <button onClick={onDone}>취소</button>
         <button className="primary" onClick={save} disabled={busy || (!text.trim() && pics.length === 0)}>{busy ? '저장 중…' : '저장'}</button>

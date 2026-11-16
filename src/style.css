@@ -328,7 +328,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .req.done .req-text { color: var(--muted); text-decoration: line-through; }
 .req-head { display: flex; align-items: center; gap: 8px; }
 .req-date { flex: 1; font-size: .75rem; color: var(--muted); }
-.req-text { margin: 6px 0 0; font-size: .88rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.req-text { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 0; color: var(--text); cursor: text; margin: 6px 0 0; font-size: .88rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .thumbs img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; }
 .thumb-edit { position: relative; }
@@ -345,3 +345,8 @@ form.create.card { margin-top: 12px; }
 /* 텍스트박스 기본 배경 (맨 아래에 두어 위 규칙보다 우선) */
 :is(input:not([type=range], [type=checkbox], [type=file], [type=radio]), select, textarea, .footnote) { background: var(--field); }
 .footnote { border: 1px solid var(--line); }
+.req-text .muted { color: var(--muted); }
+.req:focus { outline: none; }
+.shot-add { flex: none; font-size: .78rem; color: var(--accent); cursor: pointer; padding: 2px 4px; }
+.req .thumb-edit button { opacity: .75; }
+.drop-over { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 8px; background: var(--accent-soft); }
