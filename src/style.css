@@ -298,6 +298,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .rec-btn.pause { background: var(--warn); }
 .rec-btn.save { background: var(--text); color: var(--card); }
 .rec-btn:disabled { opacity: .4; }
+.rec-other { font-size: .9rem; }
+.rec-meters { display: flex; flex-direction: column; gap: 4px; }
+.rec-meter { display: flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--muted); }
+.rec-meter span { width: 56px; flex: none; }
+.rec-meter i { flex: 1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.rec-meter b { display: block; height: 100%; background: var(--danger); transition: width .12s; }
 
 /* 데이터: 부품 카드 */
 .part-card { padding-bottom: 12px; }
