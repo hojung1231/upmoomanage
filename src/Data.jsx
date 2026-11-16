@@ -46,7 +46,10 @@ function useDrop(onFiles) {
 const pastedImages = (e) => [...(e.clipboardData?.items || [])]
   .filter((i) => i.type.startsWith("image/")).map((i) => i.getAsFile()).filter(Boolean)
 
-function Request({ r, photos, onView }) {
+// Ctrl+V 붙여넣기 대상: 선택된 수정요청 id → 스크린샷 추가 함수
+const pasteTargets = new Map()
+
+function Request({ r, photos, onView, selected, onSelect }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")
   const [busy, setBusy] = useState(false)
@@ -69,7 +72,7 @@ function Request({ r, photos, onView }) {
     setBusy(false)
   }
   const pick = (e) => { const f = [...(e.target.files || [])]; e.target.value = ""; addShots(f) }
-  const onPaste = (e) => { const f = pastedImages(e); if (f.length) { e.preventDefault(); addShots(f) } }
+  useEffect(() => { pasteTargets.set(r.id, addShots); return () => pasteTargets.delete(r.id) })
   const [over, dropProps] = useDrop(addShots)
   const delShot = (p) => { if (confirm("이 스크린샷을 삭제할까요?")) { removeItem("photos", p.id); touch(r.partId) } }
   const setStatus = () => {
@@ -83,7 +86,7 @@ function Request({ r, photos, onView }) {
     touch(r.partId)
   }
   return (
-    <li className={"req" + (r.status === "완료" ? " done" : "") + (over ? " drop-over" : "")} onPaste={onPaste} tabIndex={-1} {...dropProps}>
+    <li className={"req" + (r.status === "완료" ? " done" : "") + (over ? " drop-over" : "") + (selected ? " selected" : "")} onClick={() => onSelect(r.id)} {...dropProps}>
       <div className="req-head">
         <button className={"badge " + statusClass(r.status || "요청")} onClick={setStatus} title="눌러서 상태 변경">{r.status || "요청"}</button>
         <span className="req-date">{fmtDate(r.updatedAt || r.createdAt)}</span>
@@ -106,6 +109,7 @@ function Request({ r, photos, onView }) {
           {r.text || <span className="muted">+ 내용 추가</span>}
         </button>
       )}
+      {selected && <p className="paste-hint">{busy ? "스크린샷 올리는 중…" : "📋 Ctrl+V 로 클립보드 스크린샷 붙여넣기"}</p>}
       {photos.length > 0 && (
         <div className="thumbs">
           {photos.map((p) => (
@@ -170,7 +174,7 @@ function NewRequest({ part, onDone }) {
   )
 }
 
-function PartCard({ part, requests, photos, onView }) {
+function PartCard({ part, requests, photos, onView, sel, onSelect }) {
   const [val, setVal] = useState(part.progress || 0)
   const [edit, setEdit] = useState(null) // 'note' | 'folder'
   const [draft, setDraft] = useState('')
@@ -253,7 +257,7 @@ function PartCard({ part, requests, photos, onView }) {
         {adding && <NewRequest part={part} onDone={() => setAdding(false)} />}
         <ul className="reqs">
           {shown.map((r) => (
-            <Request key={r.id} r={r} photos={photos.filter((p) => p.requestId === r.id)} onView={onView} />
+            <Request key={r.id} r={r} photos={photos.filter((p) => p.requestId === r.id)} onView={onView} selected={sel === r.id} onSelect={onSelect} />
           ))}
         </ul>
         {doneReq > 0 && (
@@ -270,6 +274,23 @@ export default function Data({ project, onClose }) {
   const photos = useCollection('photos').filter((p) => p.projectId === project.id).sort(byCreated)
   const [name, setName] = useState('')
   const [view, setView] = useState(null)
+  const [sel, setSel] = useState(null) // 선택된 수정요청 (Ctrl+V 대상)
+  const selRef = useRef(null)
+  selRef.current = sel
+  // 페이지 어디서든 Ctrl+V: 클립보드 이미지를 선택된 수정요청에 넣는다
+  useEffect(() => {
+    const onPaste = (e) => {
+      if (e.defaultPrevented) return // 새 수정요청 입력칸이 이미 처리함
+      const files = pastedImages(e)
+      if (!files.length) return
+      e.preventDefault()
+      const add = pasteTargets.get(selRef.current)
+      if (add) add(files)
+      else alert("스크린샷을 넣을 수정요청을 먼저 눌러서 선택하세요")
+    }
+    document.addEventListener("paste", onPaste)
+    return () => document.removeEventListener("paste", onPaste)
+  }, [])
   const avg = parts.length ? Math.round(parts.reduce((s, p) => s + (p.progress || 0), 0) / parts.length) : 0
   const counts = PART_STATUS.map((s) => [s, parts.filter((p) => (p.status || '시작 전') === s).length])
 
@@ -305,6 +326,8 @@ export default function Data({ project, onClose }) {
           requests={requests.filter((r) => r.partId === p.id)}
           photos={photos.filter((x) => x.partId === p.id)}
           onView={setView}
+          sel={sel}
+          onSelect={setSel}
         />
       ))}
       {parts.length === 0 && <p className="hint center">설계 데이터 항목이 없습니다</p>}

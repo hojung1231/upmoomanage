@@ -350,3 +350,6 @@ form.create.card { margin-top: 12px; }
 .shot-add { flex: none; font-size: .78rem; color: var(--accent); cursor: pointer; padding: 2px 4px; }
 .req .thumb-edit button { opacity: .75; }
 .drop-over { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 8px; background: var(--accent-soft); }
+.req { cursor: default; border-radius: 8px; }
+.req.selected { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent-soft); padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+.paste-hint { margin: 6px 0 0; font-size: .78rem; color: var(--accent); }
