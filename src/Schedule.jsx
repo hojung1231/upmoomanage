@@ -1,11 +1,13 @@
-import { useState } from 'react'
-import { useCollection, addItem, removeItem } from './store.js'
+import { useRef, useState } from 'react'
+import { useCollection, addItem, updateItem, removeItem } from './store.js'
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토']
 const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#64748b']
 
 const pad = (n) => String(n).padStart(2, '0')
 const key = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`
+const shiftKey = (k, n) => { const d = new Date(k + 'T00:00'); d.setDate(d.getDate() + n); return key(d.getFullYear(), d.getMonth(), d.getDate()) }
+const diffDays = (a, b) => Math.round((new Date(b + 'T00:00') - new Date(a + 'T00:00')) / 86400000)
 
 export default function Schedule({ project, onClose }) {
   const events = useCollection('events').filter((e) => e.projectId === project.id)
@@ -17,6 +19,71 @@ export default function Schedule({ project, onClose }) {
   const [endDate, setEndDate] = useState('')
 
   const colorOf = () => COLORS[0]
+  const meetings = useCollection('meetings')
+
+  // ---- 일정 끌어서 날짜 옮기기 (마우스: 바로 끌기 / 터치: 길게 눌러서 끌기) ----
+  const [drag, setDrag] = useState(null) // { ev, x, y, over }
+  const dragRef = useRef(null)
+  const justDragged = useRef(false)
+  const dayAt = (x, y) => document.elementFromPoint(x, y)?.closest('[data-day]')?.dataset.day || null
+  const endDrag = () => {
+    const d = dragRef.current
+    if (d?.timer) clearTimeout(d.timer)
+    if (d?.handlers) {
+      window.removeEventListener('pointermove', d.handlers.move)
+      window.removeEventListener('pointerup', d.handlers.up)
+      window.removeEventListener('pointercancel', d.handlers.cancel)
+    }
+    dragRef.current = null
+    setDrag(null)
+  }
+  const activate = (x, y) => {
+    const d = dragRef.current
+    if (!d) return
+    d.active = true
+    navigator.vibrate?.(15)
+    setDrag({ ev: d.ev, x, y, over: dayAt(x, y) })
+  }
+  function onMove(e) {
+    const d = dragRef.current
+    if (!d) return
+    const moved = Math.hypot(e.clientX - d.x0, e.clientY - d.y0)
+    if (!d.active) {
+      if (d.mouse && moved > 6) activate(e.clientX, e.clientY)
+      else if (!d.mouse && moved > 10) endDrag() // 길게 누르기 전에 움직이면 취소
+      return
+    }
+    e.preventDefault()
+    setDrag({ ev: d.ev, x: e.clientX, y: e.clientY, over: dayAt(e.clientX, e.clientY) })
+  }
+  async function onUp(e) {
+    const d = dragRef.current
+    if (!d?.active) { endDrag(); return }
+    const over = dayAt(e.clientX, e.clientY)
+    justDragged.current = true
+    setTimeout(() => { justDragged.current = false }, 80)
+    endDrag()
+    if (!over || over === d.from) return
+    const n = diffDays(d.from, over)
+    const ev = d.ev
+    const date = shiftKey(ev.date, n)
+    await updateItem('events', ev.id, { date, ...(ev.endDate ? { endDate: shiftKey(ev.endDate, n) } : {}) })
+    // 회의 카드와 연결된 일정이면 회의 날짜도 같이 옮김
+    for (const m of meetings.filter((m) => m.eventId === ev.id)) updateItem('meetings', m.id, { date })
+    setDay(over)
+  }
+  const onChipDown = (e, ev, k) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    e.stopPropagation()
+    endDrag()
+    const d = { ev, from: k, x0: e.clientX, y0: e.clientY, active: false, mouse: e.pointerType === 'mouse' }
+    if (!d.mouse) d.timer = setTimeout(() => activate(d.x0, d.y0), 300)
+    d.handlers = { move: onMove, up: onUp, cancel: endDrag }
+    dragRef.current = d
+    window.addEventListener('pointermove', onMove, { passive: false })
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', endDrag)
+  }
 
   // 기간 일정(endDate)은 시작~끝 사이 모든 날짜에 표시
   const byDay = {}
@@ -82,12 +149,20 @@ export default function Schedule({ project, onClose }) {
           return (
             <button
               key={i}
-              className={'cell' + (k === day ? ' sel' : '') + (k === todayKey ? ' today' : '')}
-              onClick={() => setDay(k)}
+              data-day={k}
+              className={'cell' + (k === day ? ' sel' : '') + (k === todayKey ? ' today' : '') + (drag?.over === k ? ' drop' : '')}
+              onClick={() => { if (!justDragged.current) setDay(k) }}
             >
               <span className={'num' + (dow === 0 ? ' sun' : dow === 6 ? ' sat' : '')}>{d}</span>
               {list.slice(0, 3).map((ev) => (
-                <span key={ev.id} className={'chip' + (ev.endDate ? ' span' : '')} style={{ background: colorOf(ev.projectId) }}>
+                <span
+                  key={ev.id}
+                  className={'chip' + (ev.endDate ? ' span' : '') + (drag?.ev.id === ev.id ? ' dragging' : '')}
+                  style={{ background: colorOf(ev.projectId) }}
+                  onPointerDown={(e) => onChipDown(e, ev, k)}
+                  onContextMenu={(e) => e.preventDefault()}
+                  title="끌어서 날짜 옮기기"
+                >
                   {ev.title}
                 </span>
               ))}
@@ -96,6 +171,13 @@ export default function Schedule({ project, onClose }) {
           )
         })}
       </div>
+
+      {drag && (
+        <div className="drag-ghost" style={{ left: drag.x, top: drag.y }}>
+          {drag.ev.title}{drag.over && <small> → {md(shiftKey(drag.ev.date, diffDays(dragRef.current?.from || drag.ev.date, drag.over)))}</small>}
+        </div>
+      )}
+      <p className="hint center cal-hint">일정을 끌어다 다른 날짜에 놓으면 옮겨집니다 (폰은 길게 누른 뒤 끌기)</p>
 
       <section className="day">
         <h2>{dayLabel}</h2>
