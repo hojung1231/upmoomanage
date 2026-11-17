@@ -15,7 +15,7 @@ const won = (n) => {
 const todayKey = () => new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10)
 const md = (k) => `${Number(k.slice(5, 7))}/${Number(k.slice(8))}`
 
-export default function Project({ project, onBack, initialView = null, openNoteId = null }) {
+export default function Project({ project, onBack, initialView = null, openNoteId = null, openRecorder = false }) {
   const [view, setView] = useState(initialView)
   const close = () => setView(null)
   const mine = (list) => list.filter((x) => x.projectId === project.id)
@@ -30,7 +30,7 @@ export default function Project({ project, onBack, initialView = null, openNoteI
   if (view === 'budget') return <Budget project={project} onClose={close} />
   if (view === 'todos') return <Todos project={project} onClose={close} />
   if (view === 'data') return <Data project={project} onClose={close} />
-  if (view === 'notes') return <Notes project={project} onClose={close} openId={openNoteId} />
+  if (view === 'notes') return <Notes project={project} onClose={close} openId={openNoteId} openRecorder={openRecorder} />
 
   // 타일 한 줄 요약
   const today = todayKey()

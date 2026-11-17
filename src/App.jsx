@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useCollection, addItem, ensureSeed, syncEnabled, useAuth, signIn, signOut, onPermissionDenied, migrateLocal } from './store.js'
 import Project from './Project.jsx'
 import UpdatePopup from './UpdatePopup.jsx'
+import RecBar from './RecBar.jsx'
 import { saveNote } from './Notes.jsx'
 import { useInstall, isInstalled } from './install.js'
 
@@ -68,7 +69,7 @@ function Main({ user }) {
   const [name, setName] = useState('')
   const [adding, setAdding] = useState(false)
   const [shared, setShared] = useState(null)
-  const [opened, setOpened] = useState(null) // 공유 저장 후 바로 열 회의록
+  const [opened, setOpened] = useState(null) // 바로 열 회의록 { projectId, noteId } 또는 녹음 화면 { projectId, record }
 
   useEffect(() => {
     migrateLocal().then(ensureSeed).catch(() => {})
@@ -120,11 +121,12 @@ function Main({ user }) {
     const open = opened && opened.projectId === selected.id ? opened : null
     content = (
       <Project
-        key={open ? open.noteId : selected.id}
+        key={open ? open.noteId || open.record : selected.id}
         project={selected}
         onBack={() => { setOpened(null); setScreen('home') }}
         initialView={open ? 'notes' : null}
         openNoteId={open?.noteId}
+        openRecorder={!!open?.record}
       />
     )
   } else {
@@ -173,6 +175,7 @@ function Main({ user }) {
   return (
     <>
       {content}
+      <RecBar onOpen={(p) => { setShared(null); setSelectedId(p.id); setScreen('project'); setOpened({ projectId: p.id, record: Date.now() }) }} />
       <UpdatePopup />
     </>
   )

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useCollection, addItem, updateItem, removeItem, syncEnabled } from './store.js'
 import Recorder, { canRecord } from './Recorder.jsx'
+import { useRecording, recTitle } from './recording.js'
 import { MeetingList, MeetingDetail } from './Meetings.jsx'
 
 const md = (k) => { const [, m, d] = k.split('-').map(Number); return `${m}/${d}` }
@@ -159,13 +160,14 @@ function NoteDetail({ note, project, onBack }) {
   )
 }
 
-export default function Notes({ project, onClose, openId }) {
+export default function Notes({ project, onClose, openId, openRecorder = false }) {
   const notes = useCollection('notes')
     .filter((n) => n.projectId === project.id)
     .sort((a, b) => b.createdAt - a.createdAt)
   const [selected, setSelected] = useState(openId || null)
   const [busy, setBusy] = useState(false)
-  const [recording, setRecording] = useState(false)
+  const [recording, setRecording] = useState(openRecorder) // 녹음 화면을 보고 있는지 (녹음 자체는 화면과 무관하게 계속됨)
+  const rec = useRecording()
   const meetings = useCollection('meetings')
   const [meetingId, setMeetingId] = useState(null)
   const meeting = meetings.find((m) => m.id === meetingId)
@@ -174,12 +176,12 @@ export default function Notes({ project, onClose, openId }) {
   if (recording) {
     return (
       <Recorder
-        onCancel={() => setRecording(false)}
-        onSave={async (text) => {
-          const d = new Date()
-          const id = await saveNote(project, text, `회의 녹음 ${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`)
+        project={project}
+        onBack={() => setRecording(false)}
+        onSave={async (out) => {
+          const id = await saveNote(out.project || project, out.text, recTitle(out.startedAt))
           setRecording(false)
-          setSelected(id)
+          if ((out.project || project).id === project.id) setSelected(id)
         }}
       />
     )
@@ -207,7 +209,7 @@ export default function Notes({ project, onClose, openId }) {
 
       <h2 className="section-title">회의록</h2>
       <div className="note-actions">
-        {canRecord && <button className="btn-primary rec-open" onClick={() => setRecording(true)}>🎙 녹음</button>}
+        {canRecord && <button className="btn-primary rec-open" onClick={() => setRecording(true)}>{rec.status !== 'idle' ? '🔴 녹음 중 화면' : '🎙 녹음'}</button>}
         <label className="btn-primary upload">
           {busy ? '올리는 중…' : '📄 텍스트 파일 올리기'}
           <input type="file" accept=".txt,text/plain" onChange={onFile} hidden />

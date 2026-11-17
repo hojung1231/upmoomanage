@@ -396,3 +396,14 @@ form.create.card { margin-top: 12px; }
 .setup-steps { margin: 0; padding-left: 18px; font-size: .85rem; line-height: 1.7; }
 .setup-steps a { color: var(--accent); }
 .setup-steps .bactions { justify-content: flex-start; margin-top: 6px; }
+
+/* 녹음 중 막대 (모든 화면 아래) */
+.rec-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 40; width: min(560px, calc(100% - 24px)); display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 10px; border-radius: 999px; background: #2a1517; color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.rec-bar.on { background: #b3261e; }
+.rec-bar.saved { justify-content: center; padding: 10px 14px; background: var(--ok); font-size: .88rem; }
+.rec-bar button { border: 0; background: rgba(255,255,255,.18); color: #fff; border-radius: 999px; min-width: 36px; height: 36px; font-size: .95rem; }
+.rec-bar .rec-bar-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: none; text-align: left; padding: 0 4px; }
+.rec-bar .rec-dot { background: #fff; }
+.rec-bar-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .85rem; opacity: .9; }
+.rec-discard { display: block; margin: 10px auto 0; font-size: .8rem; color: var(--muted); }
+body:has(.rec-bar) .page { padding-bottom: 80px; }
