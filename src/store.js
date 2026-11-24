@@ -255,9 +255,9 @@ const toBase64 = (file) => new Promise((resolve, reject) => {
   r.onerror = () => reject(new Error('파일을 읽지 못했습니다'))
   r.readAsDataURL(file)
 })
-export async function saveFile(meta, file) {
+export async function saveFile(meta, file, max = MAX_FILE) {
   if (!syncEnabled) throw new Error('파일 첨부는 PC·폰 연동 설정 후 사용할 수 있습니다')
-  if (file.size > MAX_FILE) throw new Error(`"${file.name}" 은 20MB를 넘어서 올릴 수 없습니다`)
+  if (file.size > max) throw new Error(`"${file.name}" 은 ${Math.round(max / 1048576)}MB를 넘어서 올릴 수 없습니다`)
   const b64 = await toBase64(file)
   const n = Math.max(1, Math.ceil(b64.length / CHUNK))
   const { m, db } = await firestore()

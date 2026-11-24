@@ -5,6 +5,10 @@ React + Vite 웹앱. GitHub Pages(https://hojung1231.github.io/upmoomanage/)로 
 
 ## "회의록 요약해줘" 요청을 받으면
 앱의 회의록에서 '요약 요청'을 누르면 status가 `requested`가 된다. 요약은 Claude Code가 직접 한다 (API 키 없음).
+0. 먼저 PC 회의 녹음(음성 파일, status `transcribe`)을 받아쓴다:
+   `node scripts/notes.mjs audio <스크래치폴더>/audio` → 나온 파일마다
+   `python scripts/transcribe.py <음성파일> <txt>` (faster-whisper large-v3, GPU, 백그라운드로 실행) →
+   `node scripts/notes.mjs text <id> <txt>` (원문이 채워지고 `requested` 로 바뀜)
 1. `node scripts/notes.mjs pending` 으로 요청된 회의록(원문 포함)을 읽는다.
 2. 각 회의록을 읽고 아래 JSON을 만든다 (한국어):
    - `title`: 회의 내용 한 줄 제목

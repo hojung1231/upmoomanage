@@ -298,6 +298,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .rec-btn.pause { background: var(--warn); }
 .rec-btn.save { background: var(--text); color: var(--card); }
 .rec-btn:disabled { opacity: .4; }
+.rec-pc { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line, #ddd); display: grid; gap: 6px; }
+.rec-btn.pc { background: #2563eb; }
 .rec-other { font-size: .9rem; }
 .rec-meters { display: flex; flex-direction: column; gap: 4px; }
 .rec-meter { display: flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--muted); }

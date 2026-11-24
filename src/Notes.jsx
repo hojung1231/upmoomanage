@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useCollection, addItem, updateItem, removeItem, syncEnabled } from './store.js'
+import { useCollection, addItem, updateItem, removeItem, syncEnabled, saveFile } from './store.js'
 import Recorder, { canRecord } from './Recorder.jsx'
-import { useRecording, recTitle } from './recording.js'
+import { useRecording, recTitle, fmtDur } from './recording.js'
 import { MeetingList, MeetingDetail } from './Meetings.jsx'
 
 const md = (k) => { const [, m, d] = k.split('-').map(Number); return `${m}/${d}` }
@@ -14,6 +14,27 @@ const fmtTime = (t) => {
 export async function saveNote(project, text, fileName) {
   return addItem('notes', { projectId: project.id, text, title: fileName || '회의록', status: 'new' })
 }
+
+// PC 회의 녹음(음성 파일) 저장: 받아쓰기 대기 상태로 저장 → "회의록 요약해줘" 하면 Claude Code가 PC에서 받아쓰고 요약
+export async function saveAudioNote(project, out) {
+  const title = recTitle(out.startedAt)
+  const id = await addItem('notes', { projectId: project.id, text: '', title, status: 'transcribe', sec: out.sec || 0 })
+  const ext = (out.audio.type || '').includes('ogg') ? 'ogg' : 'webm'
+  const name = title.replace(/[\\/:*?"<>|]/g, '-') + '.' + ext
+  try {
+    const audioId = await saveFile({ noteId: id, kind: 'audio' }, new File([out.audio], name, { type: out.audio.type }), 200 * 1024 * 1024)
+    await updateItem('notes', id, { audioId })
+  } catch (e) {
+    // 올리기 실패 시 녹음을 잃지 않도록 이 PC에 파일로 내려받기
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(out.audio)
+    a.download = name
+    a.click()
+    await updateItem('notes', id, { error: '음성 파일을 올리지 못해 이 PC의 다운로드 폴더에 저장했습니다: ' + (e?.message || e) })
+  }
+  return id
+}
+export const TRANSCRIBE_TEXT = 'PC 회의 녹음입니다. Claude 앱에서 업무관리 세션에 "회의록 요약해줘"라고 보내면 받아쓰기 후 요약이 채워집니다 (이 PC가 켜져 있어야 함)'
 
 // 요약 요청: Claude Code(사용자 Claude 계정)가 요청된 회의록을 읽어 요약을 채워 넣는다
 const requestSummary = (id) => updateItem('notes', id, { status: 'requested', error: '' })
@@ -64,6 +85,12 @@ function NoteDetail({ note, project, onBack }) {
         <h1>{note.title} <small className="sub">{fmtTime(note.createdAt)}</small></h1>
       </header>
 
+      {note.status === 'transcribe' && (
+        <section className="card ask">
+          <h2>🖥 받아쓰기 대기 {note.sec ? <small className="sub">{fmtDur(note.sec)}</small> : null}</h2>
+          <p className="hint">{note.audioId ? TRANSCRIBE_TEXT : note.error || '음성 파일 올리는 중…'}</p>
+        </section>
+      )}
       {note.status === 'requested' && (
         <section className="card ask">
           <h2>요약 요청됨</h2>
@@ -179,7 +206,9 @@ export default function Notes({ project, onClose, openId, openRecorder = false }
         project={project}
         onBack={() => setRecording(false)}
         onSave={async (out) => {
-          const id = await saveNote(out.project || project, out.text, recTitle(out.startedAt))
+          const id = out.audio
+            ? await saveAudioNote(out.project || project, out)
+            : await saveNote(out.project || project, out.text, recTitle(out.startedAt))
           setRecording(false)
           if ((out.project || project).id === project.id) setSelected(id)
         }}
@@ -217,7 +246,7 @@ export default function Notes({ project, onClose, openId, openRecorder = false }
       </div>
       <p className="hint center">갤럭시 음성녹음 → 텍스트 변환 → 공유 → 업무관리 로도 넣을 수 있습니다</p>
       {!syncEnabled && <p className="hint center">요약 요청은 PC·폰 연동 설정 후 사용할 수 있습니다</p>}
-      {notes.some((n) => n.status === 'requested') && <p className="hint center">{ASK_TEXT}</p>}
+      {notes.some((n) => n.status === 'requested' || n.status === 'transcribe') && <p className="hint center">{ASK_TEXT}</p>}
 
       <ul className="projects">
         {notes.map((n) => (
@@ -229,7 +258,9 @@ export default function Notes({ project, onClose, openId, openRecorder = false }
                 {(n.schedules || []).some((s) => s.status === 'pending') && ' · 스케줄 확인 필요'}
               </small>
             </button>
-            {n.status === 'requested' ? (
+            {n.status === 'transcribe' ? (
+              <span className="sum-btn busy">받아쓰기 대기</span>
+            ) : n.status === 'requested' ? (
               <span className="sum-btn busy">요청됨</span>
             ) : n.status === 'done' ? (
               <button className="sum-btn done" onClick={() => setSelected(n.id)}>요약 보기</button>
