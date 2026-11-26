@@ -47,6 +47,12 @@ function Request({ r, photos, onView, selected, onSelect }) {
   const pick = (e) => { const f = [...(e.target.files || [])]; e.target.value = ""; addShots(f) }
   useEffect(() => { pasteTargets.set(r.id, addShots); return () => pasteTargets.delete(r.id) })
   const [over, dropProps] = useDrop(addShots)
+  // 최신 사진이 맨 왼쪽, 반영완료한 사진은 팝업으로 따로
+  const [showApplied, setShowApplied] = useState(false)
+  const newest = [...photos].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+  const todo = newest.filter((p) => !p.applied)
+  const applied = newest.filter((p) => p.applied)
+  const setApplied = (p, on) => updateItem("photos", p.id, { applied: on, appliedAt: on ? Date.now() : null })
   const delShot = (p) => { if (confirm("이 스크린샷을 삭제할까요?")) { removeItem("photos", p.id); touch(r.partId) } }
   const setStatus = () => {
     updateItem("requests", r.id, { status: cycle(REQ_STATUS, r.status || "요청"), updatedAt: Date.now() })
@@ -83,14 +89,37 @@ function Request({ r, photos, onView, selected, onSelect }) {
         </button>
       )}
       {selected && <p className="paste-hint">{busy ? "스크린샷 올리는 중…" : "📋 Ctrl+V 로 클립보드 스크린샷 붙여넣기"}</p>}
-      {photos.length > 0 && (
+      {todo.length > 0 && (
         <div className="thumbs">
-          {photos.map((p) => (
+          {todo.map((p) => (
             <span key={p.id} className="thumb-edit">
               <img src={p.data} alt="" onClick={() => onView(p.data)} />
               <button onClick={() => delShot(p)} aria-label="스크린샷 삭제">✕</button>
+              <button className="apply-btn" onClick={() => setApplied(p, true)} title="반영완료로 옮기기">반영</button>
             </span>
           ))}
+        </div>
+      )}
+      {applied.length > 0 && (
+        <button className="link applied-link" onClick={(e) => { e.stopPropagation(); setShowApplied(true) }}>✓ 반영완료 {applied.length}장</button>
+      )}
+      {showApplied && applied.length > 0 && (
+        <div className="applied-pop" onClick={(e) => { e.stopPropagation(); setShowApplied(false) }}>
+          <div className="applied-box" onClick={(e) => e.stopPropagation()}>
+            <div className="card-head">
+              <h2>반영완료 사진 <small className="sub">{r.text?.slice(0, 30)}</small></h2>
+              <button onClick={() => setShowApplied(false)} aria-label="닫기">✕</button>
+            </div>
+            <div className="thumbs">
+              {applied.map((p) => (
+                <span key={p.id} className="thumb-edit">
+                  <img src={p.data} alt="" onClick={() => onView(p.data)} />
+                  <button className="apply-btn on" onClick={() => setApplied(p, false)} title="다시 눌러서 원래 사진 목록으로">✓ 반영완료</button>
+                </span>
+              ))}
+            </div>
+            <p className="hint">✓ 반영완료를 다시 누르면 원래 사진 목록으로 돌아갑니다</p>
+          </div>
         </div>
       )}
     </li>

@@ -4,3 +4,4 @@ dist
 .env.local
 firebase-service-account.json
 models/
+.env.*.local
